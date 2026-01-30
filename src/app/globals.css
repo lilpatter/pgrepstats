@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  --pgrep-bg: #0a0714;
+  --pgrep-foreground: #e9e4ff;
+  --pgrep-muted: #a39cc7;
+  --pgrep-card: rgba(20, 16, 40, 0.6);
+  --pgrep-border: rgba(155, 108, 255, 0.35);
+  --pgrep-glow: rgba(124, 77, 255, 0.35);
+  --pgrep-cyan: #56d1ff;
+}
+
+@layer base {
+  * {
+    border-color: var(--pgrep-border);
+  }
+
+  body {
+    background: var(--pgrep-bg);
+    color: var(--pgrep-foreground);
+    font-family: var(--font-pgrep-sans), system-ui, sans-serif;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .bg-aurora {
+    background-image: radial-gradient(
+        1200px circle at 20% 10%,
+        rgba(124, 77, 255, 0.2),
+        transparent 45%
+      ),
+      radial-gradient(
+        1000px circle at 85% 20%,
+        rgba(86, 209, 255, 0.18),
+        transparent 40%
+      ),
+      radial-gradient(
+        900px circle at 60% 80%,
+        rgba(155, 108, 255, 0.18),
+        transparent 40%
+      );
+  }
+
+  .glass-card {
+    background: var(--pgrep-card);
+    border: 1px solid var(--pgrep-border);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 0 40px rgba(124, 77, 255, 0.12);
+  }
+
+  .glow-border {
+    box-shadow: 0 0 0 1px rgba(155, 108, 255, 0.3),
+      0 0 18px rgba(124, 77, 255, 0.25);
+  }
+
+  .neon-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(155, 108, 255, 0.6),
+      rgba(86, 209, 255, 0.4),
+      transparent
+    );
+  }
+
+  .text-glow {
+    text-shadow: 0 0 18px rgba(155, 108, 255, 0.6);
+  }
+
+  .font-display {
+    font-family: var(--font-pgrep-display), system-ui, sans-serif;
+  }
+}
