@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Orbitron, Space_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${orbitron.variable} antialiased`}
       >
         <AppShell>{children}</AppShell>
+        <Analytics />
       </body>
     </html>
   );
