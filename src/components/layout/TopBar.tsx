@@ -3,9 +3,27 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { getSteamSession } from "@/lib/steam-auth";
+import { createSupabaseServerClient } from "@/lib/supabase";
+
+function formatTime(value?: string | null) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleString();
+}
 
 export async function TopBar() {
   const session = await getSteamSession();
+  const supabase = createSupabaseServerClient();
+  const notifications =
+    session && supabase
+      ? await supabase
+          .from("pgrep_notifications")
+          .select("id, message, created_at")
+          .eq("recipient_steam_id", session.steamId)
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : null;
   const updates = [
     {
       date: "2026-02-05",
@@ -45,6 +63,33 @@ export async function TopBar() {
             <Bell className="h-4 w-4" />
           </summary>
           <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.95)] p-4 text-sm text-[rgba(233,228,255,0.8)] shadow-xl">
+            {session ? (
+              <>
+                <div className="mb-3 text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+                  Notifications
+                </div>
+                <div className="space-y-3 text-xs">
+                  {notifications?.data?.length ? (
+                    notifications.data.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-[rgba(155,108,255,0.2)] bg-[rgba(20,16,40,0.6)] p-3"
+                      >
+                        <div className="text-[rgba(233,228,255,0.6)]">
+                          {formatTime(item.created_at)}
+                        </div>
+                        <div className="mt-1 text-white">{item.message}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-[rgba(155,108,255,0.2)] bg-[rgba(20,16,40,0.6)] p-3 text-[rgba(233,228,255,0.6)]">
+                      No notifications yet.
+                    </div>
+                  )}
+                </div>
+                <div className="my-4 h-px bg-[rgba(155,108,255,0.2)]" />
+              </>
+            ) : null}
             <div className="mb-3 text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
               Updates
             </div>

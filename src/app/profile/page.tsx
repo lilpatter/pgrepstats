@@ -43,6 +43,7 @@ type ProfileTemplateProps = {
   leetifyProfile?: Record<string, unknown> | null;
   faceitProfile?: Record<string, unknown> | null;
   errors?: Partial<Record<"steam" | "leetify" | "faceit", string>>;
+  overwatchBanned?: boolean;
 };
 
 const statCards = [
@@ -303,6 +304,7 @@ export function ProfileTemplate({
   leetifyProfile,
   faceitProfile,
   errors,
+  overwatchBanned,
 }: ProfileTemplateProps) {
   const nowMs = initialRefreshedAt ?? Date.now();
   const hasSteam = Boolean(steamProfile);
@@ -686,8 +688,9 @@ export function ProfileTemplate({
             />
           </div>
 
+          <div className="flex justify-center gap-2">
             {steamId === "76561197963549247" ? (
-              <div className="flex justify-center gap-2">
+              <>
                 <div className="group relative">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#47f59d] bg-[rgba(71,245,157,0.12)] text-[#47f59d]">
                     ✓
@@ -710,8 +713,22 @@ export function ProfileTemplate({
                     Official PGREP team account.
                   </div>
                 </div>
+              </>
+            ) : null}
+            {overwatchBanned ? (
+              <div className="group relative">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#ff5a7a] bg-[rgba(255,90,122,0.12)] text-[#ff5a7a]">
+                  ⛔
+                </span>
+                <div className="pointer-events-none absolute left-1/2 top-10 z-50 hidden w-56 -translate-x-1/2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.95)] px-4 py-3 text-center text-xs text-[rgba(233,228,255,0.7)] shadow-[0_0_24px_rgba(124,77,255,0.35)] group-hover:block">
+                  <div className="mb-1 text-sm font-semibold text-[#ff5a7a]">
+                    Overwatch Banned
+                  </div>
+                  Report approved by PGREP moderation.
+                </div>
               </div>
             ) : null}
+          </div>
 
           <div className="flex items-center justify-center gap-2">
             {hasSteam ? (

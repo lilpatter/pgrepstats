@@ -2,6 +2,7 @@ import { ProfileTemplate } from "@/app/profile/page";
 import { getEnv } from "@/lib/env";
 import { getSteamSession } from "@/lib/steam-auth";
 import { trackProfileView } from "@/lib/track";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
 type SteamProfile = {
   personaname?: string;
@@ -339,6 +340,19 @@ export default async function ProfileBySteamId({
     },
   });
 
+  let overwatchBanned = false;
+  const supabase = createSupabaseServerClient();
+  if (supabase) {
+    const { data } = await supabase
+      .from("overwatch_reports")
+      .select("id")
+      .eq("target_steam_id", steamId)
+      .eq("status", "approved")
+      .limit(1)
+      .maybeSingle();
+    overwatchBanned = Boolean(data);
+  }
+
   try {
     await trackProfileView({
       profileSteamId: steamId,
@@ -363,6 +377,7 @@ export default async function ProfileBySteamId({
       leetifyProfile={leetifyProfile}
       faceitProfile={faceitProfile}
       errors={errors}
+      overwatchBanned={overwatchBanned}
     />
   );
 }

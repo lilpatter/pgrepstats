@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { ReportModerationActions } from "@/components/admin/ReportModerationActions";
 
 const ACTIVE_WINDOW_MINUTES = 5;
 
@@ -36,7 +37,7 @@ export default async function AdminPage() {
     Date.now() - ACTIVE_WINDOW_MINUTES * 60 * 1000
   ).toISOString();
 
-  const [activeUsers, indexedProfiles] = await Promise.all([
+  const [activeUsers, indexedProfiles, reports] = await Promise.all([
     supabase
       .from("pgrep_users")
       .select("steam_id, persona_name, last_path, last_seen_at")
@@ -48,10 +49,18 @@ export default async function AdminPage() {
       .select("steam_id, persona_name, last_seen_at")
       .order("last_seen_at", { ascending: false })
       .limit(200),
+    supabase
+      .from("overwatch_reports")
+      .select(
+        "id, target_steam_id, target_persona_name, reporter_steam_id, reporter_persona_name, demo_url, cheat_type, occurred_at, created_at, status"
+      )
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
 
   const activeList = activeUsers.data ?? [];
   const indexedList = indexedProfiles.data ?? [];
+  const reportList = reports.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -164,6 +173,82 @@ export default async function AdminPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Overwatch Reports</CardTitle>
+            <CardDescription>
+              Moderate reports and update the review status.
+            </CardDescription>
+          </div>
+          <div className="text-xs text-[rgba(233,228,255,0.6)]">
+            Total: {reportList.length}
+          </div>
+        </div>
+        {reports.error ? (
+          <div className="mt-3 text-xs text-[#ff5a7a]">
+            Failed to load reports: {reports.error.message}
+          </div>
+        ) : null}
+        <div className="mt-4 space-y-4 text-xs text-[rgba(233,228,255,0.75)]">
+          {reportList.length ? (
+            reportList.map((report) => (
+              <div
+                key={report.id}
+                className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(20,16,40,0.5)] p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Case #{report.id}
+                    </div>
+                    <div className="text-white">
+                      {report.target_persona_name ?? "Unknown"} (
+                      <Link
+                        href={`/profile/${report.target_steam_id}`}
+                        className="font-mono text-[rgba(233,228,255,0.7)] hover:text-[#9b6cff]"
+                      >
+                        {report.target_steam_id}
+                      </Link>
+                      )
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Reported by {report.reporter_persona_name ?? "Unknown"} (
+                      <span className="font-mono">{report.reporter_steam_id}</span>)
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Cheat type: {report.cheat_type}
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Incident date: {formatTime(report.occurred_at)}
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Created: {formatTime(report.created_at)}
+                    </div>
+                    <a
+                      href={report.demo_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#9b6cff] hover:text-white"
+                    >
+                      View demo
+                    </a>
+                  </div>
+                  <ReportModerationActions
+                    reportId={report.id}
+                    status={report.status ?? "pending"}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-[rgba(233,228,255,0.5)]">
+              No reports yet.
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

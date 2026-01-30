@@ -77,6 +77,7 @@ export async function POST(request: Request) {
     demo_url: demo.toString(),
     cheat_type: cheatType,
     occurred_at: occurredDate.toISOString(),
+    status: "pending",
   });
 
   if (error) {
