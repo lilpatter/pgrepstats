@@ -1,13 +1,17 @@
 import Link from "next/link";
+import { Star } from "lucide-react";
 import { getEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 
 type MatchStat = {
   steam64_id?: string;
   name?: string;
   initial_team_number?: number;
+  rank?: number;
+  rank_type?: string | null;
   total_kills?: number;
   total_deaths?: number;
   total_assists?: number;
@@ -36,6 +40,18 @@ type MatchDetails = {
   stats?: MatchStat[];
 };
 
+type PlayerRanks = {
+  premier?: number | null;
+  faceit?: number | null;
+  faceit_elo?: number | null;
+  wingman?: number | null;
+  competitive?: Array<{ map_name?: string; rank?: number | null }>;
+};
+
+type PlayerProfile = {
+  ranks?: PlayerRanks;
+};
+
 function formatPercent(value?: number | null, digits = 1) {
   if (value === undefined || value === null || Number.isNaN(value)) return "N/A";
   return `${(value * 100).toFixed(digits)}%`;
@@ -53,6 +69,36 @@ function matchTypeLabel(source?: string) {
   if (source === "matchmaking_wingman") return "Wingman";
   if (source === "faceit") return "FACEIT";
   return source.toUpperCase();
+}
+
+function formatRankValue(value?: number | null) {
+  if (value === undefined || value === null || Number.isNaN(value)) return "N/A";
+  return value.toLocaleString();
+}
+
+function resolveRankLabel(
+  source: string | undefined,
+  mapName: string | undefined,
+  profile?: PlayerProfile | null
+) {
+  const ranks = profile?.ranks;
+  if (!ranks || !source) return "N/A";
+  if (source === "matchmaking") return formatRankValue(ranks.premier);
+  if (source === "matchmaking_wingman") return formatRankValue(ranks.wingman);
+  if (source === "faceit") return formatRankValue(ranks.faceit ?? ranks.faceit_elo);
+  if (source === "matchmaking_competitive") {
+    const mapRank = ranks.competitive?.find(
+      (entry) => entry.map_name === mapName
+    );
+    return formatRankValue(mapRank?.rank ?? null);
+  }
+  return "N/A";
+}
+
+function normalizeTrust(value?: number | null) {
+  if (value === undefined || value === null || Number.isNaN(value)) return null;
+  const scaled = (value + 1) / 2;
+  return Math.max(0, Math.min(100, Math.round(scaled * 100)));
 }
 
 function toAdr(stat: MatchStat) {
@@ -136,6 +182,12 @@ export default async function MatchDetailsPage({
     ([teamA], [teamB]) => teamA - teamB
   );
 
+  const rawMapName = String(match.map_name ?? "unknown").toLowerCase();
+  const mapImage =
+    rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
+      ? `/map-previews/${rawMapName}.webp`
+      : null;
+
   const steamIds = stats
     .map((stat) => stat.steam64_id)
     .filter((id): id is string => Boolean(id));
@@ -149,6 +201,28 @@ export default async function MatchDetailsPage({
       .eq("status", "approved");
     (data ?? []).forEach((row) => {
       if (row?.target_steam_id) bannedSet.add(row.target_steam_id);
+    });
+  }
+
+  const profileMap = new Map<string, PlayerProfile>();
+  if (steamIds.length) {
+    const uniqueIds = Array.from(new Set(steamIds));
+    const profileResponses = await Promise.allSettled(
+      uniqueIds.map(async (id) => {
+        const url = `${baseUrl}/v3/profile?steam64_id=${id}`;
+        const profileRes = await fetch(url, {
+          headers,
+          next: { revalidate: 300 },
+        });
+        if (!profileRes.ok) return null;
+        const profile = (await profileRes.json()) as PlayerProfile;
+        return { id, profile };
+      })
+    );
+    profileResponses.forEach((result) => {
+      if (result.status === "fulfilled" && result.value?.profile) {
+        profileMap.set(result.value.id, result.value.profile);
+      }
     });
   }
 
@@ -175,82 +249,131 @@ export default async function MatchDetailsPage({
         </Link>
       </div>
 
-      {teamEntries.map(([teamNumber, teamStats], index) => (
-        <Card key={teamNumber} className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Team {index + 1}</CardTitle>
-              <CardDescription>
-                Rounds won: {teamScores.get(teamNumber) ?? "N/A"}
-              </CardDescription>
-            </div>
-            <div className="text-xs text-[rgba(233,228,255,0.6)]">
-              Team #{teamNumber}
-            </div>
-          </div>
+      {teamEntries.map(([teamNumber, teamStats], index) => {
+        const sortedStats = [...teamStats].sort((a, b) => {
+          const aKills = a.total_kills ?? 0;
+          const bKills = b.total_kills ?? 0;
+          return bKills - aKills;
+        });
+        return (
+          <Card key={teamNumber} className="relative overflow-hidden p-5">
+            {mapImage ? <MapPreviewImage src={mapImage} alt={rawMapName} /> : null}
+            <div className="absolute inset-0 bg-[rgba(6,5,14,0.82)]" />
+            <div className="relative flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Team {index + 1}</CardTitle>
+                  <CardDescription>
+                    Rounds won: {teamScores.get(teamNumber) ?? "N/A"}
+                  </CardDescription>
+                </div>
+                <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                  Team #{teamNumber}
+                </div>
+              </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs text-[rgba(233,228,255,0.75)]">
-              <thead className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
-                <tr>
-                  <th className="py-2 pr-4">Player</th>
-                  <th className="py-2 pr-4">Rank</th>
-                  <th className="py-2 pr-4">TR</th>
-                  <th className="py-2 pr-4">K</th>
-                  <th className="py-2 pr-4">D</th>
-                  <th className="py-2 pr-4">A</th>
-                  <th className="py-2 pr-4">K/D</th>
-                  <th className="py-2 pr-4">ADR</th>
-                  <th className="py-2 pr-4">HS%</th>
-                  <th className="py-2 pr-4">KAST</th>
-                  <th className="py-2 pr-4">MVP</th>
-                  <th className="py-2">Report</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamStats.map((stat) => {
-                  const steamId = stat.steam64_id ?? "";
-                  return (
-                    <tr
-                      key={`${steamId}-${stat.name}`}
-                      className="border-t border-[rgba(155,108,255,0.15)]"
-                    >
-                      <td className="py-3 pr-4">
-                        <div className="flex flex-col">
-                          <span className="text-white">
-                            {stat.name ?? "Unknown"}
-                          </span>
-                          <span className="font-mono text-[rgba(233,228,255,0.5)]">
-                            {steamId || "N/A"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">-</td>
-                      <td className="py-3 pr-4">{formatNumber(stat.leetify_rating)}</td>
-                      <td className="py-3 pr-4">{stat.total_kills ?? "N/A"}</td>
-                      <td className="py-3 pr-4">{stat.total_deaths ?? "N/A"}</td>
-                      <td className="py-3 pr-4">{stat.total_assists ?? "N/A"}</td>
-                      <td className="py-3 pr-4">{formatNumber(stat.kd_ratio)}</td>
-                      <td className="py-3 pr-4">{formatNumber(toAdr(stat), 1)}</td>
-                      <td className="py-3 pr-4">{formatPercent(toHsPercent(stat))}</td>
-                      <td className="py-3 pr-4">{formatPercent(toKast(stat))}</td>
-                      <td className="py-3 pr-4">{stat.mvps ?? "N/A"}</td>
-                      <td className="py-3">
-                        <ReportOverwatchModal
-                          steamId={steamId || undefined}
-                          playerName={stat.name ?? null}
-                          disabled={steamId ? bannedSet.has(steamId) : true}
-                          disabledReason="Player is already overwatch banned."
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      ))}
+              <div className="flex flex-col gap-4 lg:flex-row">
+                <div className="flex w-full items-center justify-center rounded-3xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,20,0.75)] px-4 py-6 text-center lg:w-28">
+                  <div>
+                    <div className="text-4xl font-semibold text-white">
+                      {teamScores.get(teamNumber) ?? "-"}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
+                      Team {index + 1}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-x-auto">
+                  <table className="w-full text-left text-xs text-[rgba(233,228,255,0.75)]">
+                    <thead className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+                      <tr className="border-b border-[rgba(155,108,255,0.2)]">
+                        <th className="py-2 pr-4">Player</th>
+                        <th className="py-2 pr-4">Rank</th>
+                        <th className="py-2 pr-4">TR</th>
+                        <th className="py-2 pr-4">K</th>
+                        <th className="py-2 pr-4">D</th>
+                        <th className="py-2 pr-4">A</th>
+                        <th className="py-2 pr-4">K/D</th>
+                        <th className="py-2 pr-4">ADR</th>
+                        <th className="py-2 pr-4">HS%</th>
+                        <th className="py-2 pr-4 text-[rgba(233,228,255,0.35)]">
+                          KAST
+                        </th>
+                        <th className="py-2 pr-4">MVP</th>
+                        <th className="py-2">Report</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedStats.map((stat) => {
+                        const steamId = stat.steam64_id ?? "";
+                        const profile = steamId ? profileMap.get(steamId) : null;
+                        const rankLabel = resolveRankLabel(
+                          match.data_source,
+                          match.map_name,
+                          profile
+                        );
+                        const trustRating = normalizeTrust(stat.leetify_rating);
+                        return (
+                          <tr
+                            key={`${steamId}-${stat.name}`}
+                            className="border-t border-[rgba(155,108,255,0.12)]"
+                          >
+                            <td className="py-3 pr-4">
+                              <div className="flex flex-col">
+                                <span className="text-white">
+                                  {stat.name ?? "Unknown"}
+                                </span>
+                                <span className="font-mono text-[rgba(233,228,255,0.5)]">
+                                  {steamId || "N/A"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 pr-4">
+                              <div className="flex flex-col">
+                                <span className="text-white">{rankLabel}</span>
+                                <span className="text-[rgba(233,228,255,0.5)]">
+                                  {matchTypeLabel(match.data_source)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 pr-4">
+                              {trustRating === null ? "N/A" : trustRating}
+                            </td>
+                            <td className="py-3 pr-4">{stat.total_kills ?? "N/A"}</td>
+                            <td className="py-3 pr-4">{stat.total_deaths ?? "N/A"}</td>
+                            <td className="py-3 pr-4">{stat.total_assists ?? "N/A"}</td>
+                            <td className="py-3 pr-4">{formatNumber(stat.kd_ratio)}</td>
+                            <td className="py-3 pr-4">{formatNumber(toAdr(stat), 1)}</td>
+                            <td className="py-3 pr-4">{formatPercent(toHsPercent(stat))}</td>
+                            <td className="py-3 pr-4 text-[rgba(233,228,255,0.35)]">
+                              {formatPercent(toKast(stat))}
+                            </td>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-1 text-white">
+                                <Star className="h-3.5 w-3.5 text-[#ffd35a]" />
+                                {stat.mvps ?? 0}
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <ReportOverwatchModal
+                                steamId={steamId || undefined}
+                                playerName={stat.name ?? null}
+                                disabled={steamId ? bannedSet.has(steamId) : true}
+                                disabledReason="Player is already overwatch banned."
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }
