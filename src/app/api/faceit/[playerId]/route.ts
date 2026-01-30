@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getEnv } from "@/lib/env";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { playerId: string } }
+  request: NextRequest,
+  context: { params: Promise<{ playerId: string }> }
 ) {
   const ip = request.headers.get("x-forwarded-for") ?? "local";
   const rate = checkRateLimit(`faceit:${ip}`);
@@ -17,7 +17,7 @@ export async function GET(
 
   try {
     const apiKey = getEnv("FACEIT_SERVER_API_KEY");
-    const playerId = params.playerId;
+    const { playerId } = await context.params;
 
     const profileRes = await fetch(
       `https://open.faceit.com/data/v4/players/${playerId}`,

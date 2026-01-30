@@ -4,7 +4,7 @@ import { getEnv } from "@/lib/env";
 
 export async function GET(
   request: Request,
-  { params }: { params: { steamId: string } }
+  context: { params: Promise<{ steamId: string }> }
 ) {
   const ip = request.headers.get("x-forwarded-for") ?? "local";
   const rate = checkRateLimit(`steam:${ip}`);
@@ -17,7 +17,7 @@ export async function GET(
 
   try {
     const apiKey = getEnv("STEAM_WEB_API_KEY");
-    const steamId = params.steamId;
+    const { steamId } = await context.params;
 
     const summaryRes = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`,

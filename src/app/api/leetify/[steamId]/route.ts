@@ -4,7 +4,7 @@ import { getEnv } from "@/lib/env";
 
 export async function GET(
   request: Request,
-  { params }: { params: { steamId: string } }
+  context: { params: Promise<{ steamId: string }> }
 ) {
   const ip = request.headers.get("x-forwarded-for") ?? "local";
   const rate = checkRateLimit(`leetify:${ip}`);
@@ -24,7 +24,7 @@ export async function GET(
     const baseUrl = rawBaseUrl.includes("api.leetify.com")
       ? "https://api-public.cs-prod.leetify.com"
       : rawBaseUrl;
-    const steamId = params.steamId;
+    const { steamId } = await context.params;
 
     const headers: Record<string, string> = {
       Accept: "application/json",
