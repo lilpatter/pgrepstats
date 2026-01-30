@@ -40,6 +40,12 @@ type MatchDetails = {
   stats?: MatchStat[];
 };
 
+type SteamSummary = {
+  steamid: string;
+  personaname?: string;
+  avatarfull?: string;
+};
+
 type PlayerRanks = {
   premier?: number | null;
   faceit?: number | null;
@@ -70,6 +76,21 @@ function matchTypeLabel(source?: string) {
   if (source === "matchmaking_wingman") return "Wingman";
   if (source === "faceit") return "FACEIT";
   return source.toUpperCase();
+}
+
+function formatMapName(mapName?: string | null) {
+  if (!mapName) return "Unknown";
+  const cleaned = mapName.replace(/^de_/, "").replace(/^cs_/, "");
+  return cleaned
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function estimateDuration(rounds: number) {
+  if (!rounds) return "N/A";
+  const minutes = Math.round(rounds * 1.9);
+  return `${minutes}m`;
 }
 
 function getPremierBadge(rating?: number | null) {
@@ -187,6 +208,10 @@ export default async function MatchDetailsPage({
 
   const match = (await res.json()) as MatchDetails;
   const stats = match.stats ?? [];
+  const roundsCount = stats.reduce((max, stat) => {
+    const count = stat.rounds_count ?? 0;
+    return Math.max(max, count);
+  }, 0);
   const teamScores = new Map<number, number>();
   (match.team_scores ?? []).forEach((team) => {
     teamScores.set(team.team_number, team.score);
@@ -261,6 +286,34 @@ export default async function MatchDetailsPage({
     });
   }
 
+  const steamSummaryMap = new Map<string, SteamSummary>();
+  const steamApiKey = process.env.STEAM_WEB_API_KEY;
+  if (steamApiKey && steamIds.length) {
+    const uniqueIds = Array.from(new Set(steamIds));
+    const chunks: string[][] = [];
+    for (let i = 0; i < uniqueIds.length; i += 100) {
+      chunks.push(uniqueIds.slice(i, i + 100));
+    }
+    const summaryResponses = await Promise.allSettled(
+      chunks.map(async (chunk) => {
+        const summaryUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${steamApiKey}&steamids=${chunk.join(",")}`;
+        const summaryRes = await fetch(summaryUrl, {
+          next: { revalidate: 300 },
+        });
+        if (!summaryRes.ok) return [];
+        const payload = await summaryRes.json();
+        return (payload?.response?.players as SteamSummary[]) ?? [];
+      })
+    );
+    summaryResponses.forEach((result) => {
+      if (result.status === "fulfilled") {
+        result.value.forEach((player) => {
+          if (player?.steamid) steamSummaryMap.set(player.steamid, player);
+        });
+      }
+    });
+  }
+
   return (
     <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6">
       {mapImage ? (
@@ -277,9 +330,24 @@ export default async function MatchDetailsPage({
           <div className="text-2xl font-semibold text-white">
             Match Details
           </div>
-          <div className="text-sm text-[rgba(233,228,255,0.6)]">
-            {match.map_name ?? "Unknown map"} •{" "}
-            {match.finished_at ? new Date(match.finished_at).toLocaleString() : "N/A"}
+          <div className="mt-2 flex flex-wrap gap-3 text-xs text-[rgba(233,228,255,0.65)]">
+            <span className="rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(15,12,30,0.6)] px-3 py-1">
+              {matchTypeLabel(match.data_source)}
+            </span>
+            <span className="rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(15,12,30,0.6)] px-3 py-1">
+              {formatMapName(match.map_name)}
+            </span>
+            <span className="rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(15,12,30,0.6)] px-3 py-1">
+              {estimateDuration(roundsCount)}
+            </span>
+            <span className="rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(15,12,30,0.6)] px-3 py-1">
+              {match.finished_at
+                ? new Date(match.finished_at).toLocaleString()
+                : "N/A"}
+            </span>
+            <span className="rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(15,12,30,0.6)] px-3 py-1">
+              Server: N/A
+            </span>
           </div>
         </div>
         <Link
@@ -335,6 +403,7 @@ export default async function MatchDetailsPage({
                       {sortedStats.map((stat) => {
                         const steamId = stat.steam64_id ?? "";
                         const profile = steamId ? profileMap.get(steamId) : null;
+                        const summary = steamId ? steamSummaryMap.get(steamId) : null;
                         const rankLabel = resolveRankLabel(
                           match.data_source,
                           match.map_name,
@@ -342,7 +411,7 @@ export default async function MatchDetailsPage({
                         );
                         const trustRecord = steamId ? trustMap.get(steamId) : null;
                         const trustRating = trustRecord?.trust ?? null;
-                        const avatarUrl = getSteamAvatarUrl(steamId);
+                        const avatarUrl = summary?.avatarfull ?? null;
                         const premierRating = getPremierRating(profile);
                         const premierBadge =
                           match.data_source === "matchmaking"
@@ -374,7 +443,7 @@ export default async function MatchDetailsPage({
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="text-white">
-                                    {stat.name ?? "Unknown"}
+                                    {summary?.personaname ?? stat.name ?? "Unknown"}
                                   </span>
                                   <span className="font-mono text-[rgba(233,228,255,0.5)]">
                                     {steamId || "N/A"}
