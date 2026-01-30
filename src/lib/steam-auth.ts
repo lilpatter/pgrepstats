@@ -90,4 +90,3 @@ export async function verifyOpenIdResponse(searchParams: URLSearchParams) {
   const text = await res.text();
   return text.includes("is_valid:true");
 }
-

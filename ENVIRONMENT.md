@@ -19,4 +19,3 @@ Windows quick create (PowerShell):
 New-Item -Path . -Name ".env.local" -ItemType "File"
 notepad .env.local
 ```
-

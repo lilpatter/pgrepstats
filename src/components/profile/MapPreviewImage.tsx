@@ -17,4 +17,3 @@ export function MapPreviewImage({ src, alt }: { src: string; alt: string }) {
     />
   );
 }
-

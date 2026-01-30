@@ -7,4 +7,3 @@ export async function GET(request: Request) {
   clearSteamSessionCookie(response);
   return response;
 }
-

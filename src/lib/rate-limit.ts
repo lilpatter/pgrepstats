@@ -22,4 +22,3 @@ export function checkRateLimit(key: string) {
   entry.count += 1;
   return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
 }
-

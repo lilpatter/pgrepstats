@@ -5,4 +5,3 @@ export function getEnv(name: string, fallback?: string) {
   }
   return value;
 }
-

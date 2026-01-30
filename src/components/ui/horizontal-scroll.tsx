@@ -39,4 +39,3 @@ export function HorizontalScroll({ className, children }: HorizontalScrollProps)
     </div>
   );
 }
-

@@ -102,4 +102,3 @@ export function TabsContent({
   }
   return <div className={cn("space-y-6", className)}>{children}</div>;
 }
-

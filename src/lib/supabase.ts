@@ -6,4 +6,3 @@ export function createSupabaseServerClient() {
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false } });
 }
-

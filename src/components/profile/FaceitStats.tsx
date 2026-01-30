@@ -939,4 +939,3 @@ export function FaceitStats({
     </div>
   );
 }
-

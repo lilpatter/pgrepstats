@@ -353,4 +353,3 @@ export default async function ProfileBySteamId({
     />
   );
 }
-
