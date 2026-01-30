@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { FaceitStats } from "@/components/profile/FaceitStats";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
+import { AutoFlagBadge } from "@/components/profile/AutoFlagBadge";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
 type SteamProfile = {
@@ -614,21 +615,43 @@ export async function ProfileTemplate({
       : "Highly Suspicious"
     : "Insufficient Data";
 
+  let autoFlaggedAt: string | null = null;
+  let autoFlagReason: string | null = null;
   if (steamId && steamProfile) {
     const supabase = createSupabaseServerClient();
     if (supabase) {
-      await supabase
+      const { data: existing } = await supabase
         .from("pgrep_profiles")
-        .upsert(
-          {
-            steam_id: steamId,
-            persona_name: steamProfile.personaname ?? null,
-            avatar_url: steamProfile.avatarfull ?? null,
-            trust_rating: trustScore ?? null,
-            last_seen_at: new Date().toISOString(),
-          },
-          { onConflict: "steam_id" }
-        );
+        .select("auto_flagged_at, auto_flag_reason")
+        .eq("steam_id", steamId)
+        .maybeSingle();
+
+      const nowIso = new Date().toISOString();
+      const shouldAutoFlag = trustScore !== null && trustScore < 15;
+      autoFlaggedAt = existing?.auto_flagged_at ?? null;
+      autoFlagReason = existing?.auto_flag_reason ?? null;
+
+      const updatePayload: Record<string, unknown> = {
+        steam_id: steamId,
+        persona_name: steamProfile.personaname ?? null,
+        avatar_url: steamProfile.avatarfull ?? null,
+        trust_rating: trustScore ?? null,
+        last_seen_at: nowIso,
+      };
+
+      if (shouldAutoFlag) {
+        autoFlaggedAt = autoFlaggedAt ?? nowIso;
+        autoFlagReason = autoFlagReason ?? "Trust rating below 15.";
+        updatePayload.auto_flagged_at = autoFlaggedAt;
+        updatePayload.auto_flag_reason = autoFlagReason;
+      } else if (autoFlaggedAt || autoFlagReason) {
+        updatePayload.auto_flagged_at = autoFlaggedAt;
+        updatePayload.auto_flag_reason = autoFlagReason;
+      }
+
+      await supabase.from("pgrep_profiles").upsert(updatePayload, {
+        onConflict: "steam_id",
+      });
     }
   }
   const faceitLifetime = faceitStatsResponse?.lifetime;
@@ -751,6 +774,11 @@ export async function ProfileTemplate({
               </div>
             ) : null}
           </div>
+          {autoFlaggedAt && autoFlagReason ? (
+            <div className="flex justify-center">
+              <AutoFlagBadge flaggedAt={autoFlaggedAt} reason={autoFlagReason} />
+            </div>
+          ) : null}
 
           <div className="flex items-center justify-center gap-2">
             {hasSteam ? (
