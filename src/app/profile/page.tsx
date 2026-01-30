@@ -4,11 +4,11 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
-import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/charts/ProgressRing";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { FaceitStats } from "@/components/profile/FaceitStats";
+import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 
 type SteamProfile = {
   personaname?: string;
@@ -838,13 +838,10 @@ export function ProfileTemplate({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div />
             <div className="flex items-center gap-3">
-              {/* TODO: WIP — add report modal, evidence input, and submit to backend. */}
-              <Button variant="ghost" className="gap-2" disabled>
-                Report for Overwatch
-                <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
-                  WIP
-                </span>
-              </Button>
+              <ReportOverwatchModal
+                steamId={steamId}
+                playerName={displayName}
+              />
             </div>
           </div>
 

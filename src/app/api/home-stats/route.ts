@@ -8,7 +8,7 @@ export async function GET() {
     if (supabase) {
       const activeCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-      const [statsRow, profilesCount, activeUsersCount] = await Promise.all([
+      const [statsRow, profilesCount, activeUsersCount, reportsCount] = await Promise.all([
         supabase
           .from("home_stats")
           .select("reports_submitted, ai_auto_flagged")
@@ -22,14 +22,22 @@ export async function GET() {
           .from("pgrep_users")
           .select("steam_id", { count: "exact", head: true })
           .gte("last_seen_at", activeCutoff),
+        supabase
+          .from("overwatch_reports")
+          .select("id", { count: "exact", head: true }),
       ]);
 
       const reportsSubmitted =
-        statsRow.data?.reports_submitted ?? null;
+        reportsCount.count ?? statsRow.data?.reports_submitted ?? null;
       const aiAutoFlagged =
         statsRow.data?.ai_auto_flagged ?? null;
 
-      if (!statsRow.error || !profilesCount.error || !activeUsersCount.error) {
+      if (
+        !statsRow.error ||
+        !profilesCount.error ||
+        !activeUsersCount.error ||
+        !reportsCount.error
+      ) {
         return Response.json(
           {
             playersIndexed: profilesCount.count ?? 0,
