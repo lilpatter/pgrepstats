@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
+import { getSteamSession } from "@/lib/steam-auth";
 
 type MatchStat = {
   steam64_id?: string;
@@ -176,6 +177,7 @@ export default async function MatchDetailsPage({
   params: Promise<{ dataSource: string; dataSourceId: string }>;
 }) {
   const { dataSource, dataSourceId } = await params;
+  const session = await getSteamSession();
   const apiKey = process.env.LEETIFY_API_KEY;
   const rawBaseUrl = getEnv(
     "LEETIFY_BASE_URL",
@@ -368,9 +370,9 @@ export default async function MatchDetailsPage({
           <Card key={teamNumber} className="relative overflow-hidden p-5">
             <div className="relative flex flex-col gap-4">
               <div className="flex flex-col gap-4 lg:flex-row">
-                <div className="flex w-full items-center justify-center rounded-3xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,20,0.75)] px-4 py-6 text-center lg:w-28">
+                <div className="flex w-full items-center justify-center rounded-3xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,20,0.75)] px-3 py-4 text-center lg:w-24">
                   <div>
-                    <div className="text-4xl font-semibold text-white">
+                    <div className="text-3xl font-semibold text-white">
                       {teamScores.get(teamNumber) ?? "-"}
                     </div>
                     <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
@@ -380,8 +382,8 @@ export default async function MatchDetailsPage({
                 </div>
 
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-xs text-[rgba(233,228,255,0.75)]">
-                    <thead className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+                  <table className="w-full text-left text-[11px] text-[rgba(233,228,255,0.75)]">
+                    <thead className="text-[9px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
                       <tr className="border-b border-[rgba(155,108,255,0.2)]">
                         <th className="py-2 pr-4">Player</th>
                         <th className="py-2 pr-4">Rank</th>
@@ -415,14 +417,14 @@ export default async function MatchDetailsPage({
                         const premierRating = getPremierRating(profile);
                         const premierBadge =
                           match.data_source === "matchmaking"
-                            ? getPremierBadge(premierRating)
+                            ? getPremierBadge(premierRating ?? 0)
                             : null;
                         return (
                           <tr
                             key={`${steamId}-${stat.name}`}
                             className="border-t border-[rgba(155,108,255,0.12)]"
                           >
-                            <td className="py-3 pr-4">
+                            <td className="py-2 pr-4">
                               <Link
                                 href={steamId ? `/profile/${steamId}` : "#"}
                                 className="flex items-center gap-3"
@@ -451,7 +453,7 @@ export default async function MatchDetailsPage({
                                 </div>
                               </Link>
                             </td>
-                            <td className="py-3 pr-4">
+                            <td className="py-2 pr-4">
                               {premierBadge ? (
                                 <div className="relative h-8 w-20">
                                   <img
@@ -462,7 +464,7 @@ export default async function MatchDetailsPage({
                                   />
                                   <div className="absolute inset-0 flex items-center justify-center italic text-white">
                                     <span className="text-sm font-semibold">
-                                      {premierRating?.toLocaleString() ?? "N/A"}
+                                      {premierRating === null ? "--" : premierRating?.toLocaleString()}
                                     </span>
                                   </div>
                                 </div>
@@ -475,30 +477,31 @@ export default async function MatchDetailsPage({
                                 </div>
                               )}
                             </td>
-                            <td className="py-3 pr-4 text-[rgba(233,228,255,0.35)]">
+                            <td className="py-2 pr-4 text-[rgba(233,228,255,0.35)]">
                               {trustRating ?? "N/A"}
                             </td>
-                            <td className="py-3 pr-4">{stat.total_kills ?? "N/A"}</td>
-                            <td className="py-3 pr-4">{stat.total_deaths ?? "N/A"}</td>
-                            <td className="py-3 pr-4">{stat.total_assists ?? "N/A"}</td>
-                            <td className="py-3 pr-4">{formatNumber(stat.kd_ratio)}</td>
-                            <td className="py-3 pr-4">{formatNumber(toAdr(stat), 1)}</td>
-                            <td className="py-3 pr-4">{formatPercent(toHsPercent(stat))}</td>
-                            <td className="py-3 pr-4 text-[rgba(233,228,255,0.35)]">
+                            <td className="py-2 pr-4">{stat.total_kills ?? "N/A"}</td>
+                            <td className="py-2 pr-4">{stat.total_deaths ?? "N/A"}</td>
+                            <td className="py-2 pr-4">{stat.total_assists ?? "N/A"}</td>
+                            <td className="py-2 pr-4">{formatNumber(stat.kd_ratio)}</td>
+                            <td className="py-2 pr-4">{formatNumber(toAdr(stat), 1)}</td>
+                            <td className="py-2 pr-4">{formatPercent(toHsPercent(stat))}</td>
+                            <td className="py-2 pr-4 text-[rgba(233,228,255,0.35)]">
                               {formatPercent(toKast(stat))}
                             </td>
-                            <td className="py-3 pr-4">
+                            <td className="py-2 pr-4">
                               <div className="flex items-center gap-1 text-white">
                                 <Star className="h-3.5 w-3.5 text-[#ffd35a]" />
                                 {stat.mvps ?? 0}
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="py-2">
                               <ReportOverwatchModal
                                 steamId={steamId || undefined}
                                 playerName={stat.name ?? null}
                                 disabled={steamId ? bannedSet.has(steamId) : true}
                                 disabledReason="Player is already overwatch banned."
+                                viewerSteamId={session?.steamId ?? null}
                               />
                             </td>
                           </tr>

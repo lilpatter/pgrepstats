@@ -46,6 +46,7 @@ type ProfileTemplateProps = {
   faceitProfile?: Record<string, unknown> | null;
   errors?: Partial<Record<"steam" | "leetify" | "faceit", string>>;
   overwatchBanned?: boolean;
+  viewerSteamId?: string | null;
 };
 
 const statCards = [
@@ -307,6 +308,7 @@ export async function ProfileTemplate({
   faceitProfile,
   errors,
   overwatchBanned,
+  viewerSteamId,
 }: ProfileTemplateProps) {
   const nowMs = initialRefreshedAt ?? Date.now();
   const hasSteam = Boolean(steamProfile);
@@ -880,6 +882,7 @@ export async function ProfileTemplate({
                 playerName={displayName}
                 disabled={Boolean(overwatchBanned)}
                 disabledReason="Player is already overwatch banned."
+                viewerSteamId={viewerSteamId ?? null}
               />
             </div>
           </div>
@@ -1487,7 +1490,7 @@ export async function ProfileTemplate({
             </div>
           ) : (
             combinedMatches.slice(0, 30).map((match) => {
-              const source = String(match.data_source ?? "unknown");
+              const source = String(match.rank_type ?? match.data_source ?? "unknown");
               const label =
                 source === "matchmaking"
                   ? "Premier"

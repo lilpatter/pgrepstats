@@ -378,6 +378,7 @@ export default async function ProfileBySteamId({
       faceitProfile={faceitProfile}
       errors={errors}
       overwatchBanned={overwatchBanned}
+      viewerSteamId={session?.steamId ?? null}
     />
   );
 }

@@ -19,6 +19,7 @@ type ReportOverwatchModalProps = {
   playerName?: string | null;
   disabled?: boolean;
   disabledReason?: string;
+  viewerSteamId?: string | null;
 };
 
 export function ReportOverwatchModal({
@@ -26,6 +27,7 @@ export function ReportOverwatchModal({
   playerName,
   disabled = false,
   disabledReason,
+  viewerSteamId,
 }: ReportOverwatchModalProps) {
   const [open, setOpen] = useState(false);
   const [occurredAt, setOccurredAt] = useState("");
@@ -82,14 +84,19 @@ export function ReportOverwatchModal({
     }
   };
 
+  const isSelfReport = Boolean(viewerSteamId && steamId && viewerSteamId === steamId);
+  const finalDisabled = disabled || isSelfReport;
+  const finalReason =
+    disabledReason ?? (isSelfReport ? "You cannot report yourself." : undefined);
+
   return (
     <>
       <Button
         variant="ghost"
         className="gap-2"
-        onClick={() => (disabled ? null : setOpen(true))}
-        disabled={disabled}
-        title={disabled ? disabledReason : undefined}
+        onClick={() => (finalDisabled ? null : setOpen(true))}
+        disabled={finalDisabled}
+        title={finalDisabled ? finalReason : undefined}
       >
         Report for Overwatch
       </Button>
@@ -164,7 +171,7 @@ export function ReportOverwatchModal({
                 <Button
                   variant="primary"
                   onClick={handleSubmit}
-                  disabled={submitting || disabled}
+                  disabled={submitting || finalDisabled}
                 >
                   {submitting ? "Submitting..." : "Submit Report"}
                 </Button>

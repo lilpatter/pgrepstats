@@ -49,6 +49,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (targetSteamId === session.steamId) {
+    return NextResponse.json(
+      { error: "You cannot report yourself." },
+      { status: 409 }
+    );
+  }
+
   const occurredDate = new Date(occurredAt);
   if (Number.isNaN(occurredDate.getTime())) {
     return NextResponse.json({ error: "Invalid date." }, { status: 400 });
