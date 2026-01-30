@@ -4,6 +4,7 @@ import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ReportModerationActions } from "@/components/admin/ReportModerationActions";
+import { IndexedProfilesPager } from "@/components/admin/IndexedProfilesPager";
 
 const ACTIVE_WINDOW_MINUTES = 5;
 
@@ -135,44 +136,14 @@ export default async function AdminPage() {
           </div>
         </Card>
 
-        <Card className="p-4">
-          <CardTitle className="mb-2">Indexed Profiles</CardTitle>
-          <CardDescription className="mb-3">
-            Most recently seen profiles.
-          </CardDescription>
+        <div>
           {indexedProfiles.error ? (
             <div className="mb-3 text-xs text-[#ff5a7a]">
               Failed to load indexed profiles: {indexedProfiles.error.message}
             </div>
           ) : null}
-          <div className="space-y-2 text-xs text-[rgba(233,228,255,0.75)]">
-            {indexedList.length ? (
-              indexedList.map((profile) => (
-                <div
-                  key={profile.steam_id}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex flex-col">
-                    <Link
-                      href={`/profile/${profile.steam_id}`}
-                      className="text-white hover:text-[#9b6cff]"
-                    >
-                      {profile.persona_name ?? "Unknown"}
-                    </Link>
-                    <span className="font-mono text-[rgba(233,228,255,0.6)]">
-                      {profile.steam_id}
-                    </span>
-                  </div>
-                  <span>{formatTime(profile.last_seen_at)}</span>
-                </div>
-              ))
-            ) : (
-              <div className="text-[rgba(233,228,255,0.5)]">
-                No indexed profiles.
-              </div>
-            )}
-          </div>
-        </Card>
+          <IndexedProfilesPager profiles={indexedList} pageSize={10} />
+        </div>
       </div>
 
       <Card className="p-5">
