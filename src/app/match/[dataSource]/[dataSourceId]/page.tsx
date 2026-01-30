@@ -107,6 +107,16 @@ function resolveRankLabel(
   return "N/A";
 }
 
+function getSteamAvatarUrl(steamId?: string | null) {
+  if (!steamId) return null;
+  return `https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/ee/ee4a2b9b2e1d8d4f59f4d0d9cbd2fcdabf1c7f80_full.jpg?steamid=${steamId}`;
+}
+
+function getPremierRating(profile?: PlayerProfile | null) {
+  const value = profile?.ranks?.premier;
+  return value === undefined || value === null ? null : value;
+}
+
 function normalizeTrust(value?: number | null) {
   if (value === undefined || value === null || Number.isNaN(value)) return null;
   const scaled = (value + 1) / 2;
@@ -205,7 +215,7 @@ export default async function MatchDetailsPage({
     .filter((id): id is string => Boolean(id));
   const supabase = createSupabaseServerClient();
   const bannedSet = new Set<string>();
-  const trustMap = new Map<string, { trust?: number | null; avatar?: string | null }>();
+  const trustMap = new Map<string, { trust?: number | null }>();
   if (supabase && steamIds.length) {
     const { data } = await supabase
       .from("overwatch_reports")
@@ -218,13 +228,12 @@ export default async function MatchDetailsPage({
 
     const { data: profiles } = await supabase
       .from("pgrep_profiles")
-      .select("steam_id, trust_rating, avatar_url")
+      .select("steam_id, trust_rating")
       .in("steam_id", steamIds);
     (profiles ?? []).forEach((row) => {
       if (row?.steam_id) {
         trustMap.set(row.steam_id, {
           trust: row.trust_rating ?? null,
-          avatar: row.avatar_url ?? null,
         });
       }
     });
@@ -255,7 +264,7 @@ export default async function MatchDetailsPage({
   return (
     <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6">
       {mapImage ? (
-        <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="fixed inset-0 -z-10 overflow-hidden">
           <MapPreviewImage src={mapImage} alt={rawMapName} />
           <div className="absolute inset-0 bg-[rgba(6,5,14,0.78)]" />
         </div>
@@ -333,10 +342,11 @@ export default async function MatchDetailsPage({
                         );
                         const trustRecord = steamId ? trustMap.get(steamId) : null;
                         const trustRating = trustRecord?.trust ?? null;
-                        const avatarUrl = trustRecord?.avatar ?? null;
+                        const avatarUrl = getSteamAvatarUrl(steamId);
+                        const premierRating = getPremierRating(profile);
                         const premierBadge =
                           match.data_source === "matchmaking"
-                            ? getPremierBadge(Number(rankLabel))
+                            ? getPremierBadge(premierRating)
                             : null;
                         return (
                           <tr
@@ -383,7 +393,7 @@ export default async function MatchDetailsPage({
                                   />
                                   <div className="absolute inset-0 flex items-center justify-center italic text-white">
                                     <span className="text-sm font-semibold">
-                                      {rankLabel}
+                                      {premierRating?.toLocaleString() ?? "N/A"}
                                     </span>
                                   </div>
                                 </div>
