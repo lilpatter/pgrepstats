@@ -11,6 +11,7 @@ LEETIFY_BASE_URL=https://api-public.cs-prod.leetify.com
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+ADMIN_STATS_TOKEN=your_admin_stats_token
 ```
 
 Notes:
