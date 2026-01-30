@@ -1244,7 +1244,12 @@ export async function ProfileTemplate({
               </TabsContent>
 
               <TabsContent value="leetify">
-              <div className="grid gap-4 lg:grid-cols-5">
+              <div className="relative grid gap-4 lg:grid-cols-5">
+                <img
+                  src="/leetify-badge.png"
+                  alt="Leetify"
+                  className="absolute right-0 top-0 h-8 w-8 opacity-80"
+                />
                 <Card className="space-y-2">
                   <CardDescription>Rating</CardDescription>
                   <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>

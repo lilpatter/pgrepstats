@@ -105,6 +105,11 @@ function getPremierBadge(rating?: number | null) {
   return "/premier/1000.png";
 }
 
+function getCompetitiveBadge(rank?: number | null) {
+  if (!rank || Number.isNaN(rank)) return null;
+  return `/competitive/${rank}.png`;
+}
+
 function formatRankValue(value?: number | null) {
   if (value === undefined || value === null || Number.isNaN(value)) return "N/A";
   return value.toLocaleString();
@@ -420,6 +425,18 @@ export default async function MatchDetailsPage({
                           match.data_source === "matchmaking"
                             ? getPremierBadge(premierRating ?? 0)
                             : null;
+                        const competitiveBadge =
+                          match.data_source === "matchmaking_competitive"
+                            ? getCompetitiveBadge(
+                                profile?.ranks?.competitive?.find(
+                                  (entry) => entry.map_name === match.map_name
+                                )?.rank ?? null
+                              )
+                            : null;
+                        const wingmanBadge =
+                          match.data_source === "matchmaking_wingman"
+                            ? getCompetitiveBadge(profile?.ranks?.wingman ?? null)
+                            : null;
                         return (
                           <tr
                             key={`${steamId}-${stat.name}`}
@@ -468,6 +485,15 @@ export default async function MatchDetailsPage({
                                       {premierRating === null ? "--" : premierRating?.toLocaleString()}
                                     </span>
                                   </div>
+                                </div>
+                              ) : competitiveBadge || wingmanBadge ? (
+                                <div className="relative h-8 w-10">
+                                  <img
+                                    src={competitiveBadge ?? wingmanBadge ?? ""}
+                                    alt="Rank"
+                                    className="h-8 w-auto object-contain"
+                                    loading="lazy"
+                                  />
                                 </div>
                               ) : (
                                 <div className="flex flex-col">
