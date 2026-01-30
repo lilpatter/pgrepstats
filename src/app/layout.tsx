@@ -3,6 +3,7 @@ import { Orbitron, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
+import { PresenceTracker } from "@/components/analytics/PresenceTracker";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-pgrep-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${orbitron.variable} antialiased`}
       >
         <AppShell>{children}</AppShell>
+        <PresenceTracker />
         <Analytics />
       </body>
     </html>
