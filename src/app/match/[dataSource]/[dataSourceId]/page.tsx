@@ -276,6 +276,7 @@ export default async function MatchDetailsPage({
           headers,
           next: { revalidate: 300 },
         });
+        if (profileRes.status === 404) return null;
         if (!profileRes.ok) return null;
         const profile = (await profileRes.json()) as PlayerProfile;
         return { id, profile };

@@ -1490,22 +1490,35 @@ export async function ProfileTemplate({
             </div>
           ) : (
             combinedMatches.slice(0, 30).map((match) => {
-              const source = String(match.rank_type ?? match.data_source ?? "unknown");
+              const dataSource = String(match.data_source ?? "unknown");
+              const rankTypeRaw = match.rank_type ?? null;
+              const rankType =
+                typeof rankTypeRaw === "number"
+                  ? rankTypeRaw
+                  : Number.isNaN(Number(rankTypeRaw))
+                  ? null
+                  : Number(rankTypeRaw);
               const label =
-                source === "matchmaking"
+                rankType === 11
                   ? "Premier"
-                  : source === "matchmaking_competitive"
+                  : rankType === 12
                   ? "Competitive"
-                  : source === "matchmaking_wingman"
+                  : rankType === 7
                   ? "Wingman"
-                  : source === "faceit"
+                  : dataSource === "matchmaking"
+                  ? "Premier"
+                  : dataSource === "matchmaking_competitive"
+                  ? "Competitive"
+                  : dataSource === "matchmaking_wingman"
+                  ? "Wingman"
+                  : dataSource === "faceit"
                   ? "FACEIT"
-                  : source.toUpperCase();
+                  : dataSource.toUpperCase();
               const dataSourceMatchId = String(match.data_source_match_id ?? "");
               const matchId = String(match.id ?? "");
               const matchUrl =
-                dataSourceMatchId && source !== "unknown"
-                  ? `/match/${encodeURIComponent(source)}/${encodeURIComponent(
+                dataSourceMatchId && dataSource !== "unknown"
+                  ? `/match/${encodeURIComponent(dataSource)}/${encodeURIComponent(
                       dataSourceMatchId
                     )}`
                   : matchId
@@ -1517,18 +1530,18 @@ export async function ProfileTemplate({
                         : null;
               return matchUrl ? (
                 <Link
-                  key={`${match.id}-${source}`}
+                  key={`${match.id}-${dataSource}`}
                   href={matchUrl}
-                          className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
+                  className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
                 >
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
-                          {mapImage ? (
-                            <>
-                              <MapPreviewImage src={mapImage} alt={rawMapName} />
-                              <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
-                            </>
-                          ) : null}
-                          <div className="relative">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
+                  {mapImage ? (
+                    <>
+                      <MapPreviewImage src={mapImage} alt={rawMapName} />
+                      <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
+                    </>
+                  ) : null}
+                  <div className="relative">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
                       {label}
@@ -1549,7 +1562,7 @@ export async function ProfileTemplate({
                 </Link>
               ) : (
                 <div
-                  key={`${match.id}-${source}-na`}
+                  key={`${match.id}-${dataSource}-na`}
                   className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(15,12,30,0.4)] px-4 py-3 text-xs text-[rgba(233,228,255,0.5)]"
                 >
                   <div className="relative">

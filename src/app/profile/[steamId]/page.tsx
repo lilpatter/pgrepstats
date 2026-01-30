@@ -120,8 +120,22 @@ async function fetchLeetifyProfile(steamId: string) {
     headers,
     next: { revalidate: 60 },
   });
+  if (res.status === 404) {
+    const errorText = await res.text().catch(() => "");
+    console.warn("[leetify] profile not found", {
+      url: profileUrl,
+      status: res.status,
+      body: errorText.slice(0, 500),
+    });
+    return null;
+  }
   if (!res.ok) {
-    const errorText = await res.text();
+    const errorText = await res.text().catch(() => "");
+    console.error("[leetify] profile fetch failed", {
+      url: profileUrl,
+      status: res.status,
+      body: errorText.slice(0, 500),
+    });
     throw new Error(
       `Leetify profile fetch failed (${res.status}) at ${profileUrl}. ${errorText}`
     );
