@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
-const ALLOWED_STATUS = new Set(["approved", "declined"]);
+const ALLOWED_STATUS = new Set(["approved", "declined", "pending"]);
 
 export async function POST(request: Request) {
   const { isAdmin, session } = await requireAdminSession();
@@ -44,12 +44,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const resolvedAt =
+    payload.status === "pending" ? null : new Date().toISOString();
+  const resolvedBy = payload.status === "pending" ? null : session?.steamId ?? null;
+
   const { error: updateError } = await supabase
     .from("overwatch_reports")
     .update({
       status: payload.status,
-      resolved_at: new Date().toISOString(),
-      resolved_by: session?.steamId ?? null,
+      resolved_at: resolvedAt,
+      resolved_by: resolvedBy,
     })
     .eq("id", report.id);
 
@@ -57,16 +61,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  const targetLabel = report.target_persona_name || report.target_steam_id;
-  const message =
-    payload.status === "approved"
-      ? `Report for ${targetLabel} is approved.`
-      : `Report for ${targetLabel} is declined.`;
+  if (payload.status !== "pending") {
+    const targetLabel = report.target_persona_name || report.target_steam_id;
+    const message =
+      payload.status === "approved"
+        ? `Report for ${targetLabel} is approved.`
+        : `Report for ${targetLabel} is declined.`;
 
-  await supabase.from("pgrep_notifications").insert({
-    recipient_steam_id: report.reporter_steam_id,
-    message,
-  });
+    await supabase.from("pgrep_notifications").insert({
+      recipient_steam_id: report.reporter_steam_id,
+      message,
+    });
+  }
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }

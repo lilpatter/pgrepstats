@@ -52,7 +52,7 @@ export default async function AdminPage() {
     supabase
       .from("overwatch_reports")
       .select(
-        "id, target_steam_id, target_persona_name, reporter_steam_id, reporter_persona_name, demo_url, cheat_type, occurred_at, created_at, status"
+        "id, target_steam_id, target_persona_name, reporter_steam_id, reporter_persona_name, demo_url, cheat_type, occurred_at, created_at, status, resolved_at, resolved_by"
       )
       .order("created_at", { ascending: false })
       .limit(200),
@@ -61,6 +61,7 @@ export default async function AdminPage() {
   const activeList = activeUsers.data ?? [];
   const indexedList = indexedProfiles.data ?? [];
   const reportList = reports.data ?? [];
+  const approvedList = reportList.filter((report) => report.status === "approved");
 
   return (
     <div className="space-y-6">
@@ -245,6 +246,67 @@ export default async function AdminPage() {
           ) : (
             <div className="text-[rgba(233,228,255,0.5)]">
               No reports yet.
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Approved Reports</CardTitle>
+            <CardDescription>
+              Active overwatch bans and approval metadata.
+            </CardDescription>
+          </div>
+          <div className="text-xs text-[rgba(233,228,255,0.6)]">
+            Total: {approvedList.length}
+          </div>
+        </div>
+        <div className="mt-4 space-y-4 text-xs text-[rgba(233,228,255,0.75)]">
+          {approvedList.length ? (
+            approvedList.map((report) => (
+              <div
+                key={`approved-${report.id}`}
+                className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(20,16,40,0.5)] p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Case #{report.id}
+                    </div>
+                    <div className="text-white">
+                      {report.target_persona_name ?? "Unknown"} (
+                      <Link
+                        href={`/profile/${report.target_steam_id}`}
+                        className="font-mono text-[rgba(233,228,255,0.7)] hover:text-[#9b6cff]"
+                      >
+                        {report.target_steam_id}
+                      </Link>
+                      )
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Reported by {report.reporter_persona_name ?? "Unknown"} (
+                      <span className="font-mono">{report.reporter_steam_id}</span>)
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Approved at: {formatTime(report.resolved_at)}
+                    </div>
+                    <div className="text-[rgba(233,228,255,0.6)]">
+                      Approved by:{" "}
+                      <span className="font-mono">{report.resolved_by ?? "N/A"}</span>
+                    </div>
+                  </div>
+                  <ReportModerationActions
+                    reportId={report.id}
+                    status={report.status ?? "pending"}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-[rgba(233,228,255,0.5)]">
+              No approved reports yet.
             </div>
           )}
         </div>

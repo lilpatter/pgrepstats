@@ -17,7 +17,7 @@ export function ReportModerationActions({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const updateStatus = (nextStatus: "approved" | "declined") => {
+  const updateStatus = (nextStatus: "approved" | "declined" | "pending") => {
     setError(null);
     startTransition(async () => {
       try {
@@ -40,9 +40,23 @@ export function ReportModerationActions({
 
   if (status !== "pending") {
     return (
-      <span className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.7)]">
-        {status}
-      </span>
+      <div className="flex flex-col items-end gap-2">
+        <span className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.7)]">
+          {status}
+        </span>
+        {status === "approved" ? (
+          <Button
+            variant="secondary"
+            onClick={() => updateStatus("pending")}
+            disabled={isPending}
+          >
+            Revert Approval
+          </Button>
+        ) : null}
+        {error ? (
+          <div className="text-xs text-[#ff5a7a]">{error}</div>
+        ) : null}
+      </div>
     );
   }
 
