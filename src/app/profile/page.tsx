@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { FaceitStats } from "@/components/profile/FaceitStats";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
 type SteamProfile = {
   personaname?: string;
@@ -294,7 +295,7 @@ function getLifetimeValue(
   return "N/A";
 }
 
-export function ProfileTemplate({
+export async function ProfileTemplate({
   steamId,
   steamProfile,
   cs2,
@@ -610,6 +611,24 @@ export function ProfileTemplate({
       ? "Caution"
       : "Highly Suspicious"
     : "Insufficient Data";
+
+  if (steamId && steamProfile) {
+    const supabase = createSupabaseServerClient();
+    if (supabase) {
+      await supabase
+        .from("pgrep_profiles")
+        .upsert(
+          {
+            steam_id: steamId,
+            persona_name: steamProfile.personaname ?? null,
+            avatar_url: steamProfile.avatarfull ?? null,
+            trust_rating: trustScore ?? null,
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "steam_id" }
+        );
+    }
+  }
   const faceitLifetime = faceitStatsResponse?.lifetime;
   const faceitWinrate = getLifetimeValue(faceitLifetime, [
     "Win Rate %",

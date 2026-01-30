@@ -49,6 +49,7 @@ type PlayerRanks = {
 };
 
 type PlayerProfile = {
+  name?: string;
   ranks?: PlayerRanks;
 };
 
@@ -69,6 +70,17 @@ function matchTypeLabel(source?: string) {
   if (source === "matchmaking_wingman") return "Wingman";
   if (source === "faceit") return "FACEIT";
   return source.toUpperCase();
+}
+
+function getPremierBadge(rating?: number | null) {
+  if (rating === undefined || rating === null) return null;
+  if (rating >= 30000) return "/premier/30000.png";
+  if (rating >= 25000) return "/premier/25000.png";
+  if (rating >= 20000) return "/premier/20000.png";
+  if (rating >= 15000) return "/premier/15000.png";
+  if (rating >= 10000) return "/premier/10000.png";
+  if (rating >= 5000) return "/premier/5000.png";
+  return "/premier/1000.png";
 }
 
 function formatRankValue(value?: number | null) {
@@ -193,6 +205,7 @@ export default async function MatchDetailsPage({
     .filter((id): id is string => Boolean(id));
   const supabase = createSupabaseServerClient();
   const bannedSet = new Set<string>();
+  const trustMap = new Map<string, { trust?: number | null; avatar?: string | null }>();
   if (supabase && steamIds.length) {
     const { data } = await supabase
       .from("overwatch_reports")
@@ -201,6 +214,19 @@ export default async function MatchDetailsPage({
       .eq("status", "approved");
     (data ?? []).forEach((row) => {
       if (row?.target_steam_id) bannedSet.add(row.target_steam_id);
+    });
+
+    const { data: profiles } = await supabase
+      .from("pgrep_profiles")
+      .select("steam_id, trust_rating, avatar_url")
+      .in("steam_id", steamIds);
+    (profiles ?? []).forEach((row) => {
+      if (row?.steam_id) {
+        trustMap.set(row.steam_id, {
+          trust: row.trust_rating ?? null,
+          avatar: row.avatar_url ?? null,
+        });
+      }
     });
   }
 
@@ -227,7 +253,13 @@ export default async function MatchDetailsPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6">
+      {mapImage ? (
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <MapPreviewImage src={mapImage} alt={rawMapName} />
+          <div className="absolute inset-0 bg-[rgba(6,5,14,0.78)]" />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
@@ -257,21 +289,7 @@ export default async function MatchDetailsPage({
         });
         return (
           <Card key={teamNumber} className="relative overflow-hidden p-5">
-            {mapImage ? <MapPreviewImage src={mapImage} alt={rawMapName} /> : null}
-            <div className="absolute inset-0 bg-[rgba(6,5,14,0.82)]" />
             <div className="relative flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Team {index + 1}</CardTitle>
-                  <CardDescription>
-                    Rounds won: {teamScores.get(teamNumber) ?? "N/A"}
-                  </CardDescription>
-                </div>
-                <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                  Team #{teamNumber}
-                </div>
-              </div>
-
               <div className="flex flex-col gap-4 lg:flex-row">
                 <div className="flex w-full items-center justify-center rounded-3xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,20,0.75)] px-4 py-6 text-center lg:w-28">
                   <div>
@@ -290,7 +308,7 @@ export default async function MatchDetailsPage({
                       <tr className="border-b border-[rgba(155,108,255,0.2)]">
                         <th className="py-2 pr-4">Player</th>
                         <th className="py-2 pr-4">Rank</th>
-                        <th className="py-2 pr-4">TR</th>
+                        <th className="py-2 pr-4 text-[rgba(233,228,255,0.35)]">TR</th>
                         <th className="py-2 pr-4">K</th>
                         <th className="py-2 pr-4">D</th>
                         <th className="py-2 pr-4">A</th>
@@ -313,32 +331,73 @@ export default async function MatchDetailsPage({
                           match.map_name,
                           profile
                         );
-                        const trustRating = normalizeTrust(stat.leetify_rating);
+                        const trustRecord = steamId ? trustMap.get(steamId) : null;
+                        const trustRating = trustRecord?.trust ?? null;
+                        const avatarUrl = trustRecord?.avatar ?? null;
+                        const premierBadge =
+                          match.data_source === "matchmaking"
+                            ? getPremierBadge(Number(rankLabel))
+                            : null;
                         return (
                           <tr
                             key={`${steamId}-${stat.name}`}
                             className="border-t border-[rgba(155,108,255,0.12)]"
                           >
                             <td className="py-3 pr-4">
-                              <div className="flex flex-col">
-                                <span className="text-white">
-                                  {stat.name ?? "Unknown"}
-                                </span>
-                                <span className="font-mono text-[rgba(233,228,255,0.5)]">
-                                  {steamId || "N/A"}
-                                </span>
-                              </div>
+                              <Link
+                                href={steamId ? `/profile/${steamId}` : "#"}
+                                className="flex items-center gap-3"
+                              >
+                                <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.9)]">
+                                  {avatarUrl ? (
+                                    <img
+                                      src={avatarUrl}
+                                      alt={stat.name ?? "Player avatar"}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[rgba(233,228,255,0.6)]">
+                                      ?
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-white">
+                                    {stat.name ?? "Unknown"}
+                                  </span>
+                                  <span className="font-mono text-[rgba(233,228,255,0.5)]">
+                                    {steamId || "N/A"}
+                                  </span>
+                                </div>
+                              </Link>
                             </td>
                             <td className="py-3 pr-4">
-                              <div className="flex flex-col">
-                                <span className="text-white">{rankLabel}</span>
-                                <span className="text-[rgba(233,228,255,0.5)]">
-                                  {matchTypeLabel(match.data_source)}
-                                </span>
-                              </div>
+                              {premierBadge ? (
+                                <div className="relative h-8 w-20">
+                                  <img
+                                    src={premierBadge}
+                                    alt="Premier Rank"
+                                    className="h-8 w-auto object-contain"
+                                    loading="lazy"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center italic text-white">
+                                    <span className="text-sm font-semibold">
+                                      {rankLabel}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col">
+                                  <span className="text-white">{rankLabel}</span>
+                                  <span className="text-[rgba(233,228,255,0.5)]">
+                                    {matchTypeLabel(match.data_source)}
+                                  </span>
+                                </div>
+                              )}
                             </td>
-                            <td className="py-3 pr-4">
-                              {trustRating === null ? "N/A" : trustRating}
+                            <td className="py-3 pr-4 text-[rgba(233,228,255,0.35)]">
+                              {trustRating ?? "N/A"}
                             </td>
                             <td className="py-3 pr-4">{stat.total_kills ?? "N/A"}</td>
                             <td className="py-3 pr-4">{stat.total_deaths ?? "N/A"}</td>
