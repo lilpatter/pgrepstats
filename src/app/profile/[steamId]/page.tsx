@@ -1,6 +1,7 @@
 import { ProfileTemplate } from "@/app/profile/page";
 import { getEnv } from "@/lib/env";
 import { getSteamSession } from "@/lib/steam-auth";
+import { trackProfileView } from "@/lib/track";
 
 type SteamProfile = {
   personaname?: string;
@@ -293,6 +294,15 @@ export default async function ProfileBySteamId({
 }) {
   const { steamId } = await params;
   const session = await getSteamSession();
+
+  try {
+    await trackProfileView({
+      profileSteamId: steamId,
+      viewerSteamId: session?.steamId ?? null,
+    });
+  } catch {
+    // Ignore analytics failures; profile should still render.
+  }
 
   const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
     fetchSteamProfile(steamId),

@@ -6,22 +6,36 @@ export async function GET() {
   try {
     const supabase = createSupabaseServerClient();
     if (supabase) {
-      const { data, error } = await supabase
-        .from("home_stats")
-        .select(
-          "players_indexed, active_users, reports_submitted, ai_auto_flagged"
-        )
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const activeCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-      if (!error && data) {
+      const [statsRow, profilesCount, activeUsersCount] = await Promise.all([
+        supabase
+          .from("home_stats")
+          .select("reports_submitted, ai_auto_flagged")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("pgrep_profiles")
+          .select("steam_id", { count: "exact", head: true }),
+        supabase
+          .from("pgrep_users")
+          .select("steam_id", { count: "exact", head: true })
+          .gte("last_seen_at", activeCutoff),
+      ]);
+
+      const reportsSubmitted =
+        statsRow.data?.reports_submitted ?? null;
+      const aiAutoFlagged =
+        statsRow.data?.ai_auto_flagged ?? null;
+
+      if (!statsRow.error || !profilesCount.error || !activeUsersCount.error) {
         return Response.json(
           {
-            playersIndexed: data.players_indexed ?? null,
-            activeUsers: data.active_users ?? null,
-            reportsSubmitted: data.reports_submitted ?? null,
-            aiAutoFlagged: data.ai_auto_flagged ?? null,
+            playersIndexed: profilesCount.count ?? 0,
+            activeUsers: activeUsersCount.count ?? 0,
+            reportsSubmitted,
+            aiAutoFlagged,
           },
           { status: 200 }
         );
