@@ -18,7 +18,7 @@ const navItems = [
   { label: "Profile", href: "/profile", icon: User, available: true },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, available: false },
   { label: "AI Flags", href: "/ai-flags", icon: Sparkles, available: true },
-  { label: "Reported Players", href: "/reported-players", icon: Flag, available: false },
+  { label: "Reported Players", href: "/reported-players", icon: Flag, available: true },
   { label: "Docs / API", href: "/docs", icon: BookOpen, available: false },
   { label: "Feature Requests", href: "/feature-requests", icon: Megaphone, available: false },
 ];

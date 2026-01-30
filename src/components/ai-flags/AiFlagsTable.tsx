@@ -1,6 +1,3 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 
@@ -41,20 +38,16 @@ function getPremierBadge(rating?: number | null) {
 
 export function AiFlagsTable({
   profiles,
+  page,
+  total,
   pageSize = 10,
 }: {
   profiles: AutoFlagRow[];
+  page: number;
+  total: number;
   pageSize?: number;
 }) {
-  const [page, setPage] = useState(0);
-  const total = profiles.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  const pageItems = useMemo(() => {
-    const start = page * pageSize;
-    return profiles.slice(start, start + pageSize);
-  }, [page, pageSize, profiles]);
-
   const startIndex = total === 0 ? 0 : page * pageSize + 1;
   const endIndex = Math.min(total, (page + 1) * pageSize);
 
@@ -73,8 +66,8 @@ export function AiFlagsTable({
             </tr>
           </thead>
           <tbody>
-            {pageItems.length ? (
-              pageItems.map((profile) => (
+            {profiles.length ? (
+              profiles.map((profile) => (
                 <tr
                   key={profile.steam_id}
                   className="border-t border-[rgba(155,108,255,0.15)]"
@@ -175,41 +168,37 @@ export function AiFlagsTable({
           Showing {startIndex} to {endIndex} of {total}
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setPage(0)}
+          <Link
+            href={`/ai-flags?page=1`}
             className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1"
-            disabled={page === 0}
+            aria-disabled={page === 0}
           >
             «
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+          </Link>
+          <Link
+            href={`/ai-flags?page=${Math.max(1, page)}`}
             className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1"
-            disabled={page === 0}
+            aria-disabled={page === 0}
           >
             ‹
-          </button>
+          </Link>
           <span className="text-[rgba(233,228,255,0.8)]">
             Page {page + 1}
           </span>
-          <button
-            type="button"
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+          <Link
+            href={`/ai-flags?page=${Math.min(totalPages, page + 2)}`}
             className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1"
-            disabled={page >= totalPages - 1}
+            aria-disabled={page >= totalPages - 1}
           >
             ›
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage(totalPages - 1)}
+          </Link>
+          <Link
+            href={`/ai-flags?page=${totalPages}`}
             className="rounded-full border border-[rgba(155,108,255,0.35)] px-2 py-1"
-            disabled={page >= totalPages - 1}
+            aria-disabled={page >= totalPages - 1}
           >
             »
-          </button>
+          </Link>
         </div>
       </div>
     </>
