@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PGREP
 
-## Getting Started
+PGREP is a CS2 player intelligence and reporting platform that aggregates Steam, Leetify, and FACEIT data into a single scouting and moderation experience. It highlights reputation signals, recent match performance, and community reports to help players and admins evaluate suspicious activity.
 
-First, run the development server:
+## What the site includes
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Player profiles** with Steam identity, recent activity, CS2 stats, and external performance data.
+- **Reputation scoring** that calculates a trust rating and auto-flags low-trust profiles.
+- **Overwatch reports** with submission flow, admin moderation, and user notifications.
+- **Match details** pages that visualize scoreboards and per-player performance.
+- **Admin dashboard** for tracking active users, indexed profiles, and report moderation.
+- **AI Flags** and **Reported Players** pages for community-driven review workflows.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data sources
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Steam Web API
+- Leetify Public API
+- FACEIT Data API
+- Supabase (storage + analytics)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Status
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+PGREP is under active development and iterates quickly. New features, scoring improvements, and moderation tools are being added continuously.
