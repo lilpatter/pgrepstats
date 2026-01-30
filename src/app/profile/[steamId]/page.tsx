@@ -295,15 +295,6 @@ export default async function ProfileBySteamId({
   const { steamId } = await params;
   const session = await getSteamSession();
 
-  try {
-    await trackProfileView({
-      profileSteamId: steamId,
-      viewerSteamId: session?.steamId ?? null,
-    });
-  } catch {
-    // Ignore analytics failures; profile should still render.
-  }
-
   const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
     fetchSteamProfile(steamId),
     fetchLeetifyProfile(steamId),
@@ -347,6 +338,18 @@ export default async function ProfileBySteamId({
       faceit: faceitResult.status,
     },
   });
+
+  try {
+    await trackProfileView({
+      profileSteamId: steamId,
+      profilePersonaName: steamProfile?.personaname ?? null,
+      viewerSteamId: session?.steamId ?? null,
+      viewerPersonaName: session?.personaName ?? null,
+      viewerPath: `/profile/${steamId}`,
+    });
+  } catch {
+    // Ignore analytics failures; profile should still render.
+  }
 
   return (
     <ProfileTemplate

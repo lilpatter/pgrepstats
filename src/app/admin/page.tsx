@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
@@ -30,6 +31,7 @@ export default async function AdminPage() {
     );
   }
 
+  const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const cutoff = new Date(
     Date.now() - ACTIVE_WINDOW_MINUTES * 60 * 1000
   ).toISOString();
@@ -37,13 +39,13 @@ export default async function AdminPage() {
   const [activeUsers, indexedProfiles] = await Promise.all([
     supabase
       .from("pgrep_users")
-      .select("steam_id, last_seen_at")
+      .select("steam_id, persona_name, last_path, last_seen_at")
       .gte("last_seen_at", cutoff)
       .order("last_seen_at", { ascending: false })
       .limit(200),
     supabase
       .from("pgrep_profiles")
-      .select("steam_id, last_seen_at")
+      .select("steam_id, persona_name, last_seen_at")
       .order("last_seen_at", { ascending: false })
       .limit(200),
   ]);
@@ -58,6 +60,12 @@ export default async function AdminPage() {
         <div className="text-sm text-[rgba(233,228,255,0.6)]">
           Active window: last {ACTIVE_WINDOW_MINUTES} minutes
         </div>
+        {!hasServiceRole ? (
+          <div className="mt-2 text-xs text-[#ff5a7a]">
+            SUPABASE_SERVICE_ROLE_KEY is not set. Admin stats may be empty if RLS
+            blocks anon access.
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -83,6 +91,11 @@ export default async function AdminPage() {
           <CardDescription className="mb-3">
             Steam IDs active within the window.
           </CardDescription>
+          {activeUsers.error ? (
+            <div className="mb-3 text-xs text-[#ff5a7a]">
+              Failed to load active users: {activeUsers.error.message}
+            </div>
+          ) : null}
           <div className="space-y-2 text-xs text-[rgba(233,228,255,0.75)]">
             {activeList.length ? (
               activeList.map((user) => (
@@ -90,8 +103,20 @@ export default async function AdminPage() {
                   key={user.steam_id}
                   className="flex items-center justify-between"
                 >
-                  <span className="font-mono">{user.steam_id}</span>
-                  <span>{formatTime(user.last_seen_at)}</span>
+                  <div className="flex flex-col">
+                    <span className="text-white">
+                      {user.persona_name ?? "Unknown"}
+                    </span>
+                    <span className="font-mono text-[rgba(233,228,255,0.6)]">
+                      {user.steam_id}
+                    </span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span>{formatTime(user.last_seen_at)}</span>
+                    <span className="text-[rgba(233,228,255,0.6)]">
+                      {user.last_path ?? "N/A"}
+                    </span>
+                  </div>
                 </div>
               ))
             ) : (
@@ -105,6 +130,11 @@ export default async function AdminPage() {
           <CardDescription className="mb-3">
             Most recently seen profiles.
           </CardDescription>
+          {indexedProfiles.error ? (
+            <div className="mb-3 text-xs text-[#ff5a7a]">
+              Failed to load indexed profiles: {indexedProfiles.error.message}
+            </div>
+          ) : null}
           <div className="space-y-2 text-xs text-[rgba(233,228,255,0.75)]">
             {indexedList.length ? (
               indexedList.map((profile) => (
@@ -112,7 +142,17 @@ export default async function AdminPage() {
                   key={profile.steam_id}
                   className="flex items-center justify-between"
                 >
-                  <span className="font-mono">{profile.steam_id}</span>
+                  <div className="flex flex-col">
+                    <Link
+                      href={`/profile/${profile.steam_id}`}
+                      className="text-white hover:text-[#9b6cff]"
+                    >
+                      {profile.persona_name ?? "Unknown"}
+                    </Link>
+                    <span className="font-mono text-[rgba(233,228,255,0.6)]">
+                      {profile.steam_id}
+                    </span>
+                  </div>
                   <span>{formatTime(profile.last_seen_at)}</span>
                 </div>
               ))
