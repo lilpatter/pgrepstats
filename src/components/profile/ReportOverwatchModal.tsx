@@ -17,11 +17,15 @@ const CHEAT_TYPES = [
 type ReportOverwatchModalProps = {
   steamId?: string;
   playerName?: string | null;
+  disabled?: boolean;
+  disabledReason?: string;
 };
 
 export function ReportOverwatchModal({
   steamId,
   playerName,
+  disabled = false,
+  disabledReason,
 }: ReportOverwatchModalProps) {
   const [open, setOpen] = useState(false);
   const [occurredAt, setOccurredAt] = useState("");
@@ -80,7 +84,13 @@ export function ReportOverwatchModal({
 
   return (
     <>
-      <Button variant="ghost" className="gap-2" onClick={() => setOpen(true)}>
+      <Button
+        variant="ghost"
+        className="gap-2"
+        onClick={() => (disabled ? null : setOpen(true))}
+        disabled={disabled}
+        title={disabled ? disabledReason : undefined}
+      >
         Report for Overwatch
       </Button>
 
@@ -154,7 +164,7 @@ export function ReportOverwatchModal({
                 <Button
                   variant="primary"
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || disabled}
                 >
                   {submitting ? "Submitting..." : "Submit Report"}
                 </Button>

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -858,6 +859,8 @@ export function ProfileTemplate({
               <ReportOverwatchModal
                 steamId={steamId}
                 playerName={displayName}
+                disabled={Boolean(overwatchBanned)}
+                disabledReason="Player is already overwatch banned."
               />
             </div>
           </div>
@@ -1464,7 +1467,7 @@ export function ProfileTemplate({
               N/A
             </div>
           ) : (
-                    combinedMatches.slice(0, 30).map((match) => {
+            combinedMatches.slice(0, 30).map((match) => {
               const source = String(match.data_source ?? "unknown");
               const label =
                 source === "matchmaking"
@@ -1476,18 +1479,24 @@ export function ProfileTemplate({
                   : source === "faceit"
                   ? "FACEIT"
                   : source.toUpperCase();
-                      const matchId = String(match.id ?? "");
-              const matchUrl = matchId ? `https://leetify.com/app/match-details/${matchId}` : undefined;
+              const dataSourceMatchId = String(match.data_source_match_id ?? "");
+              const matchId = String(match.id ?? "");
+              const matchUrl =
+                dataSourceMatchId && source !== "unknown"
+                  ? `/match/${encodeURIComponent(source)}/${encodeURIComponent(
+                      dataSourceMatchId
+                    )}`
+                  : matchId
+                  ? `/match/leetify/${encodeURIComponent(matchId)}`
+                  : undefined;
                       const rawMapName = String(match.map_name ?? "unknown").toLowerCase();
                       const mapImage = rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
                         ? `/map-previews/${rawMapName}.webp`
                         : null;
-              return (
-                <a
+              return matchUrl ? (
+                <Link
                   key={`${match.id}-${source}`}
                   href={matchUrl}
-                  target="_blank"
-                  rel="noreferrer"
                           className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
                 >
                           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
@@ -1515,7 +1524,16 @@ export function ProfileTemplate({
                       : "N/A"}
                   </div>
                           </div>
-                </a>
+                </Link>
+              ) : (
+                <div
+                  key={`${match.id}-${source}-na`}
+                  className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(15,12,30,0.4)] px-4 py-3 text-xs text-[rgba(233,228,255,0.5)]"
+                >
+                  <div className="relative">
+                    Match details unavailable
+                  </div>
+                </div>
               );
             })
           )}

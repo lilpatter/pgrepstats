@@ -69,6 +69,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const { data: existingBan } = await supabase
+    .from("overwatch_reports")
+    .select("id")
+    .eq("target_steam_id", targetSteamId)
+    .eq("status", "approved")
+    .limit(1)
+    .maybeSingle();
+  if (existingBan) {
+    return NextResponse.json(
+      { error: "Player is already overwatch banned." },
+      { status: 409 }
+    );
+  }
+
   const { error } = await supabase.from("overwatch_reports").insert({
     target_steam_id: targetSteamId,
     target_persona_name: targetName ?? null,
