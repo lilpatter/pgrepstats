@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Flag, Search, ShieldAlert } from "lucide-react";
+import { Flag, Search } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { AiFlagsTable } from "@/components/ai-flags/AiFlagsTable";
 
 type AutoFlagRow = {
   steam_id: string;
@@ -9,20 +9,10 @@ type AutoFlagRow = {
   avatar_url?: string | null;
   trust_rating?: number | null;
   auto_flagged_at?: string | null;
+  premier_rating?: number | null;
+  faceit_level?: number | null;
+  faceit_elo?: number | null;
 };
-
-function formatRelative(value?: string | null) {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-  const diffMs = Date.now() - date.getTime();
-  const hours = Math.floor(diffMs / 3_600_000);
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `${days} days ago`;
-  if (hours > 0) return `${hours} hours ago`;
-  const minutes = Math.floor(diffMs / 60_000);
-  return `${Math.max(1, minutes)} min ago`;
-}
 
 export default async function AiFlagsPage() {
   const supabase = createSupabaseServerClient();
@@ -30,7 +20,9 @@ export default async function AiFlagsPage() {
   if (supabase) {
     const { data } = await supabase
       .from("pgrep_profiles")
-      .select("steam_id, persona_name, avatar_url, trust_rating, auto_flagged_at")
+      .select(
+        "steam_id, persona_name, avatar_url, trust_rating, auto_flagged_at, premier_rating, faceit_level, faceit_elo"
+      )
       .not("auto_flagged_at", "is", null)
       .order("auto_flagged_at", { ascending: false })
       .limit(200);
@@ -99,88 +91,7 @@ export default async function AiFlagsPage() {
             </div>
           </div>
         </div>
-
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-xs text-[rgba(233,228,255,0.75)]">
-            <thead className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
-              <tr>
-                <th className="py-2 pr-4">Player</th>
-                <th className="py-2 pr-4">Autoflagged</th>
-                <th className="py-2 pr-4">Premier</th>
-                <th className="py-2 pr-4">FACEIT</th>
-                <th className="py-2 pr-4">Trust Rating</th>
-                <th className="py-2">Restrictions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {profiles.length ? (
-                profiles.slice(0, 20).map((profile) => (
-                  <tr
-                    key={profile.steam_id}
-                    className="border-t border-[rgba(155,108,255,0.15)]"
-                  >
-                    <td className="py-3 pr-4">
-                      <Link
-                        href={`/profile/${profile.steam_id}`}
-                        className="flex items-center gap-3"
-                      >
-                        <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.9)]">
-                          {profile.avatar_url ? (
-                            <img
-                              src={profile.avatar_url}
-                              alt={profile.persona_name ?? "Player avatar"}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[rgba(233,228,255,0.6)]">
-                              ?
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-white">
-                            {profile.persona_name ?? "Unknown"}
-                          </span>
-                          <span className="font-mono text-[rgba(233,228,255,0.5)]">
-                            {profile.steam_id}
-                          </span>
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="py-3 pr-4">
-                      {formatRelative(profile.auto_flagged_at)}
-                    </td>
-                    <td className="py-3 pr-4 text-[rgba(233,228,255,0.5)]">
-                      --
-                    </td>
-                    <td className="py-3 pr-4 text-[rgba(233,228,255,0.5)]">
-                      --
-                    </td>
-                    <td className="py-3 pr-4 text-[#ff5a7a]">
-                      {profile.trust_rating !== null &&
-                      profile.trust_rating !== undefined
-                        ? `${profile.trust_rating.toFixed(1)}%`
-                        : "N/A"}
-                    </td>
-                    <td className="py-3">
-                      <ShieldAlert className="h-4 w-4 text-[#ff5a7a]" />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="py-6 text-center text-[rgba(233,228,255,0.6)]"
-                  >
-                    No auto-flagged players yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AiFlagsTable profiles={profiles} pageSize={10} />
       </Card>
     </div>
   );

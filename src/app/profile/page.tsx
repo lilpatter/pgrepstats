@@ -636,6 +636,9 @@ export async function ProfileTemplate({
         persona_name: steamProfile.personaname ?? null,
         avatar_url: steamProfile.avatarfull ?? null,
         trust_rating: trustScore ?? null,
+        premier_rating: leetifyRanks?.premier ?? null,
+        faceit_level: faceitLevel ?? null,
+        faceit_elo: faceitElo ?? null,
         last_seen_at: nowIso,
       };
 
