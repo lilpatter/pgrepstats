@@ -11,6 +11,7 @@ export async function GET() {
         .select(
           "players_indexed, active_users, reports_submitted, ai_auto_flagged"
         )
+        .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
