@@ -15,6 +15,86 @@ function formatTime(value?: string | null) {
   return date.toLocaleString();
 }
 
+function renderMatchPreview(report: {
+  match_url?: string | null;
+  match_preview?: Record<string, unknown> | null;
+  target_persona_name?: string | null;
+}) {
+  const preview =
+    report.match_preview && typeof report.match_preview === "object"
+      ? report.match_preview
+      : null;
+  if (!preview) return null;
+
+  const previewMap = preview.mapName ? String(preview.mapName) : "Unknown map";
+  const previewSource = preview.dataSource
+    ? String(preview.dataSource).toUpperCase()
+    : "MATCH";
+  const previewScore = Array.isArray(preview.score)
+    ? `${preview.score?.[0]}-${preview.score?.[1]}`
+    : "N/A";
+  const previewOutcome = preview.outcome ? String(preview.outcome) : "Result";
+  const previewPlayer = preview.playerName
+    ? String(preview.playerName)
+    : report.target_persona_name ?? "Player";
+  const previewStats =
+    preview.kills !== undefined &&
+    preview.deaths !== undefined &&
+    preview.assists !== undefined
+      ? `${preview.kills}-${preview.deaths}-${preview.assists}`
+      : "N/A";
+  const previewMapSlug = previewMap.toLowerCase();
+  const previewMapImage =
+    previewMapSlug.startsWith("de_") || previewMapSlug.startsWith("cs_")
+      ? `/map-previews/${previewMapSlug}.webp`
+      : null;
+
+  return (
+    <div className="relative mt-3 overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,8,20,0.75)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)]">
+      {previewMapImage ? (
+        <>
+          <img
+            src={previewMapImage}
+            alt={previewMap}
+            className="absolute inset-0 h-full w-full object-cover opacity-70 blur-[1px]"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
+        </>
+      ) : null}
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
+              {previewSource}
+            </span>
+            <span className="text-sm font-semibold text-white">{previewMap}</span>
+          </div>
+          <div className="text-[rgba(233,228,255,0.6)]">
+            {previewPlayer} • K/D/A {previewStats}
+          </div>
+        </div>
+        <div className="text-right text-sm text-white">
+          {previewScore}
+          <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+            {previewOutcome}
+          </div>
+        </div>
+      </div>
+      {report.match_url ? (
+        <Link
+          href={report.match_url}
+          target="_blank"
+          rel="noreferrer"
+          className="relative mt-3 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#9b6cff] hover:text-white"
+        >
+          View match
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 export default async function AdminPage() {
   const { isAdmin } = await requireAdminSession();
   if (!isAdmin) {
@@ -53,7 +133,7 @@ export default async function AdminPage() {
     supabase
       .from("overwatch_reports")
       .select(
-        "id, target_steam_id, target_persona_name, reporter_steam_id, reporter_persona_name, demo_url, cheat_type, occurred_at, created_at, status, resolved_at, resolved_by"
+        "id, target_steam_id, target_persona_name, reporter_steam_id, reporter_persona_name, demo_url, cheat_type, occurred_at, created_at, status, resolved_at, resolved_by, match_url, match_preview"
       )
       .order("created_at", { ascending: false })
       .limit(200),
@@ -206,6 +286,7 @@ export default async function AdminPage() {
                     >
                       View demo
                     </a>
+                    {renderMatchPreview(report)}
                   </div>
                   <ReportModerationActions
                     reportId={report.id}
@@ -267,6 +348,7 @@ export default async function AdminPage() {
                       Approved by:{" "}
                       <span className="font-mono">{report.resolved_by ?? "N/A"}</span>
                     </div>
+                    {renderMatchPreview(report)}
                   </div>
                   <ReportModerationActions
                     reportId={report.id}
