@@ -11,10 +11,10 @@ export async function GET() {
       const [statsRow, profilesCount, activeUsersCount, reportsCount, autoFlagCount] =
         await Promise.all([
         supabase
-          .from("home_stats")
+        .from("home_stats")
           .select("reports_submitted, ai_auto_flagged")
           .order("updated_at", { ascending: false })
-          .limit(1)
+        .limit(1)
           .maybeSingle(),
         supabase
           .from("pgrep_profiles")

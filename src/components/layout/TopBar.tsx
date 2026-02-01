@@ -162,7 +162,7 @@ export async function TopBar() {
             </div>
           </details>
         ) : (
-          <Link
+          <a
             href="/api/auth/steam/login"
             className="flex items-center gap-3 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.6)] px-3 py-2 text-sm font-semibold text-white transition hover:border-[rgba(155,108,255,0.6)]"
           >
@@ -178,7 +178,7 @@ export async function TopBar() {
               </svg>
             </span>
             Sign in with Steam
-          </Link>
+          </a>
         )}
       </div>
     </header>

@@ -1,19 +1,6 @@
-import { ProfileTemplate } from "@/app/profile/page";
 import { getEnv } from "@/lib/env";
-import { getSteamSession } from "@/lib/steam-auth";
-import { trackProfileView } from "@/lib/track";
-import { createSupabaseServerClient } from "@/lib/supabase";
 
-export const revalidate = 60;
-
-type SteamResponse = Awaited<ReturnType<typeof fetchSteamProfile>>;
-type LeetifyResponse = Awaited<ReturnType<typeof fetchLeetifyProfile>>;
-type FaceitResponse = Awaited<ReturnType<typeof fetchFaceitProfile>>;
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-type SteamProfile = {
+export type SteamProfile = {
   personaname?: string;
   avatarfull?: string;
   profileurl?: string;
@@ -21,13 +8,15 @@ type SteamProfile = {
   gameextrainfo?: string;
   lastlogoff?: number;
   personastate?: number;
+  loccountrycode?: string;
+  communityvisibilitystate?: number;
 };
 
-type SteamGame = {
+export type SteamGame = {
   playtime_forever?: number;
 };
 
-type SteamRecentGame = {
+export type SteamRecentGame = {
   appid?: number;
   name?: string;
   playtime_2weeks?: number;
@@ -35,7 +24,7 @@ type SteamRecentGame = {
   img_icon_url?: string;
 };
 
-async function fetchSteamProfile(steamId: string) {
+export async function fetchSteamProfile(steamId: string) {
   const apiKey = getEnv("STEAM_WEB_API_KEY");
   const summaryRes = await fetch(
     `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`,
@@ -106,7 +95,7 @@ async function fetchSteamProfile(steamId: string) {
   };
 }
 
-async function fetchLeetifyProfile(steamId: string) {
+export async function fetchLeetifyProfile(steamId: string) {
   const apiKey = process.env.LEETIFY_API_KEY;
   const rawBaseUrl = getEnv(
     "LEETIFY_BASE_URL",
@@ -146,14 +135,14 @@ async function fetchLeetifyProfile(steamId: string) {
       body: errorText.slice(0, 500),
     });
     throw new Error(
-      `Leetify profile fetch failed (${res.status}) at ${profileUrl}. ${errorText}`
+      `Leetify profile fetch failed (${res.status}). ${errorText}`
     );
   }
   const payload = (await res.json()) as Record<string, unknown>;
   return (payload as { profile?: Record<string, unknown> })?.profile ?? payload;
 }
 
-async function fetchFaceitProfile(steamId: string) {
+export async function fetchFaceitProfile(steamId: string) {
   const apiKey = getEnv("FACEIT_SERVER_API_KEY");
   const res = await fetch(
     `https://open.faceit.com/data/v4/players?game=cs2&game_player_id=${steamId}`,
@@ -190,7 +179,6 @@ async function fetchFaceitProfile(steamId: string) {
       );
       if (statsRes.ok) {
         statsResponse = (await statsRes.json()) as Record<string, unknown>;
-        const lifetime = (statsResponse?.lifetime as Record<string, unknown>) ?? null;
       }
     } catch {
       statsResponse = null;
@@ -215,7 +203,7 @@ async function fetchFaceitProfile(steamId: string) {
 
     try {
       const historyRes = await fetch(
-        `https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&offset=0&limit=50`,
+        `https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&offset=0&limit=12`,
         {
           headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -232,7 +220,7 @@ async function fetchFaceitProfile(steamId: string) {
 
     try {
       const historyRes = await fetch(
-        `https://open.faceit.com/data/v4/players/${playerId}/history?game=csgo&offset=0&limit=50`,
+        `https://open.faceit.com/data/v4/players/${playerId}/history?game=csgo&offset=0&limit=12`,
         {
           headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -309,129 +297,4 @@ async function fetchFaceitProfile(steamId: string) {
     teamsResponse,
     tournamentsResponse,
   };
-}
-
-export default async function ProfileBySteamId({
-  params,
-}: {
-  params: Promise<{ steamId: string }>;
-}) {
-  const { steamId } = await params;
-  const session = await getSteamSession();
-  const supabase = createSupabaseServerClient();
-
-  let cachedProfile:
-    | {
-        steam_snapshot?: unknown;
-        leetify_snapshot?: unknown;
-        faceit_snapshot?: unknown;
-      }
-    | null = null;
-  if (supabase) {
-    const { data } = await supabase
-      .from("pgrep_profiles")
-      .select("steam_snapshot, leetify_snapshot, faceit_snapshot")
-      .eq("steam_id", steamId)
-      .maybeSingle();
-    cachedProfile = data ?? null;
-  }
-
-  const cachedSteam = isObject(cachedProfile?.steam_snapshot)
-    ? (cachedProfile?.steam_snapshot as SteamResponse)
-    : null;
-  const cachedLeetify = isObject(cachedProfile?.leetify_snapshot)
-    ? (cachedProfile?.leetify_snapshot as LeetifyResponse)
-    : null;
-  const cachedFaceit = isObject(cachedProfile?.faceit_snapshot)
-    ? (cachedProfile?.faceit_snapshot as FaceitResponse)
-    : null;
-
-  const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
-    cachedSteam ? Promise.resolve(cachedSteam) : fetchSteamProfile(steamId),
-    cachedLeetify ? Promise.resolve(cachedLeetify) : fetchLeetifyProfile(steamId),
-    cachedFaceit ? Promise.resolve(cachedFaceit) : fetchFaceitProfile(steamId),
-  ]);
-
-  const steamProfile =
-    steamResult.status === "fulfilled" ? steamResult.value.profile : null;
-  const cs2 =
-    steamResult.status === "fulfilled" ? steamResult.value.cs2 : null;
-  const steamLevel =
-    steamResult.status === "fulfilled" ? steamResult.value.steamLevel : null;
-  const steamFriendsCount =
-    steamResult.status === "fulfilled" ? steamResult.value.friendsCount : null;
-  const steamRecentGames =
-    steamResult.status === "fulfilled" ? steamResult.value.recentGames : [];
-  const leetifyProfile =
-    leetifyResult.status === "fulfilled"
-      ? (leetifyResult.value as LeetifyResponse)
-      : null;
-  const faceitProfile =
-    faceitResult.status === "fulfilled"
-      ? (faceitResult.value as FaceitResponse)
-      : null;
-
-  const errors: Record<string, string> = {};
-  if (steamResult.status === "rejected") {
-    errors.steam = steamResult.reason?.message ?? "Steam fetch failed.";
-  }
-  if (leetifyResult.status === "rejected") {
-    errors.leetify = leetifyResult.reason?.message ?? "Leetify fetch failed.";
-  }
-  if (faceitResult.status === "rejected") {
-    errors.faceit = faceitResult.reason?.message ?? "FACEIT fetch failed.";
-  }
-
-  console.info("[profile]", {
-    steamId,
-    viewer: session
-      ? { steamId: session.steamId, name: session.personaName }
-      : null,
-    fetches: {
-      steam: steamResult.status,
-      leetify: leetifyResult.status,
-      faceit: faceitResult.status,
-    },
-  });
-
-  let overwatchBanned = false;
-  if (supabase) {
-    const { data } = await supabase
-      .from("overwatch_reports")
-      .select("id")
-      .eq("target_steam_id", steamId)
-      .eq("status", "approved")
-      .limit(1)
-      .maybeSingle();
-    overwatchBanned = Boolean(data);
-  }
-
-  try {
-    await trackProfileView({
-      profileSteamId: steamId,
-      profilePersonaName: steamProfile?.personaname ?? null,
-      viewerSteamId: session?.steamId ?? null,
-      viewerPersonaName: session?.personaName ?? null,
-      viewerPath: `/profile/${steamId}`,
-    });
-  } catch {
-    // Ignore analytics failures; profile should still render.
-  }
-
-  return (
-    <ProfileTemplate
-      steamId={steamId}
-      steamProfile={steamProfile}
-      cs2={cs2}
-      steamLevel={steamLevel}
-      steamFriendsCount={steamFriendsCount}
-      steamRecentGames={steamRecentGames}
-      initialRefreshedAt={null}
-      leetifyProfile={leetifyProfile}
-      faceitProfile={faceitProfile}
-      errors={errors}
-      overwatchBanned={overwatchBanned}
-      viewerSteamId={session?.steamId ?? null}
-    />
-  );
 }

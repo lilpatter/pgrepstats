@@ -9,12 +9,16 @@ export function ProfileActions({
   initialRefreshedAt,
   steamId,
 }: {
-  initialRefreshedAt: number;
+  initialRefreshedAt: number | null;
   steamId?: string;
 }) {
   const [toast, setToast] = useState<string | null>(null);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState(initialRefreshedAt);
-  const [minutesAgo, setMinutesAgo] = useState(0);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(
+    initialRefreshedAt
+  );
+  const [minutesAgo, setMinutesAgo] = useState<number | null>(
+    initialRefreshedAt ? 0 : null
+  );
   const router = useRouter();
 
   const triggerToast = (message: string) => {
@@ -75,6 +79,7 @@ export function ProfileActions({
   };
 
   useEffect(() => {
+    if (!lastRefreshedAt) return;
     const interval = setInterval(() => {
       const minutes = Math.floor((Date.now() - lastRefreshedAt) / 60000);
       setMinutesAgo(minutes);
@@ -103,7 +108,7 @@ export function ProfileActions({
         Refresh stats
       </button>
       <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
-        Refreshed {minutesAgo} min ago
+        {minutesAgo === null ? "Never refreshed" : `Refreshed ${minutesAgo} min ago`}
       </div>
       {toast && (
         <div className="absolute -top-10 left-0 rounded-2xl border border-[rgba(155,108,255,0.4)] bg-[rgba(20,16,40,0.9)] px-4 py-2 text-xs text-white shadow-[0_0_24px_rgba(124,77,255,0.4)]">

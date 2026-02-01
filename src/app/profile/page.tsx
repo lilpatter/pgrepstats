@@ -42,7 +42,7 @@ type ProfileTemplateProps = {
     playtime_forever?: number;
     img_icon_url?: string;
   }>;
-  initialRefreshedAt?: number;
+  initialRefreshedAt?: number | null;
   leetifyProfile?: Record<string, unknown> | null;
   faceitProfile?: Record<string, unknown> | null;
   errors?: Partial<Record<"steam" | "leetify" | "faceit", string>>;
@@ -917,9 +917,7 @@ export async function ProfileTemplate({
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2" />
           <ProfileActions
-            initialRefreshedAt={
-              lastRefreshedAtMs ?? initialRefreshedAt ?? Date.now()
-            }
+            initialRefreshedAt={lastRefreshedAtMs ?? null}
             steamId={steamId}
           />
         </Card>

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import {
+  fetchFaceitProfile,
+  fetchLeetifyProfile,
+  fetchSteamProfile,
+} from "@/lib/profile-sources";
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -27,16 +32,43 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString();
-  await supabase
-    .from("pgrep_profiles")
-    .upsert(
-      {
-        steam_id: payload.steamId,
-        last_refreshed_at: nowIso,
-        last_seen_at: nowIso,
-      },
-      { onConflict: "steam_id" }
-    );
+  const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
+    fetchSteamProfile(payload.steamId),
+    fetchLeetifyProfile(payload.steamId),
+    fetchFaceitProfile(payload.steamId),
+  ]);
 
-  return NextResponse.json({ ok: true, refreshedAt: nowIso }, { status: 200 });
+  const updatePayload: Record<string, unknown> = {
+    steam_id: payload.steamId,
+    last_refreshed_at: nowIso,
+    last_seen_at: nowIso,
+  };
+
+  if (steamResult.status === "fulfilled") {
+    updatePayload.steam_snapshot = steamResult.value;
+  }
+  if (leetifyResult.status === "fulfilled") {
+    updatePayload.leetify_snapshot = leetifyResult.value;
+  }
+  if (faceitResult.status === "fulfilled") {
+    updatePayload.faceit_snapshot = faceitResult.value;
+  }
+
+  await supabase.from("pgrep_profiles").upsert(updatePayload, {
+    onConflict: "steam_id",
+  });
+
+  return NextResponse.json(
+    {
+      ok: true,
+      refreshedAt: nowIso,
+      errors: {
+        steam: steamResult.status === "rejected" ? steamResult.reason?.message : null,
+        leetify:
+          leetifyResult.status === "rejected" ? leetifyResult.reason?.message : null,
+        faceit: faceitResult.status === "rejected" ? faceitResult.reason?.message : null,
+      },
+    },
+    { status: 200 }
+  );
 }
