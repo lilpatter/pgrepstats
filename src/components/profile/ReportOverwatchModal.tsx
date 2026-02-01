@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, Swords, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 
 const CHEAT_TYPES = [
   "Aim",
@@ -20,6 +21,18 @@ type ReportOverwatchModalProps = {
   disabled?: boolean;
   disabledReason?: string;
   viewerSteamId?: string | null;
+  matchUrl?: string | null;
+  matchPreview?: {
+    mapName?: string | null;
+    dataSource?: string | null;
+    score?: [number, number] | null;
+    outcome?: string | null;
+    finishedAt?: string | null;
+    playerName?: string | null;
+    kills?: number | null;
+    deaths?: number | null;
+    assists?: number | null;
+  } | null;
 };
 
 export function ReportOverwatchModal({
@@ -28,6 +41,8 @@ export function ReportOverwatchModal({
   disabled = false,
   disabledReason,
   viewerSteamId,
+  matchUrl,
+  matchPreview,
 }: ReportOverwatchModalProps) {
   const [open, setOpen] = useState(false);
   const [occurredAt, setOccurredAt] = useState("");
@@ -64,6 +79,8 @@ export function ReportOverwatchModal({
           occurredAt,
           demoUrl,
           cheatType,
+          matchUrl: matchUrl ?? null,
+          matchPreview: matchPreview ?? null,
         }),
       });
 
@@ -88,6 +105,27 @@ export function ReportOverwatchModal({
   const finalDisabled = disabled || isSelfReport;
   const finalReason =
     disabledReason ?? (isSelfReport ? "You cannot report yourself." : undefined);
+  const mapName = matchPreview?.mapName ? String(matchPreview.mapName) : null;
+  const mapSlug = mapName ? mapName.toLowerCase() : null;
+  const mapImage =
+    mapSlug && (mapSlug.startsWith("de_") || mapSlug.startsWith("cs_"))
+      ? `/map-previews/${mapSlug}.webp`
+      : null;
+  const matchLabel = matchPreview?.dataSource
+    ? String(matchPreview.dataSource).toUpperCase()
+    : "MATCH";
+  const scoreLabel = Array.isArray(matchPreview?.score)
+    ? `${matchPreview?.score?.[0]}-${matchPreview?.score?.[1]}`
+    : "N/A";
+  const statsLabel =
+    matchPreview?.kills !== null &&
+    matchPreview?.kills !== undefined &&
+    matchPreview?.deaths !== null &&
+    matchPreview?.deaths !== undefined &&
+    matchPreview?.assists !== null &&
+    matchPreview?.assists !== undefined
+      ? `${matchPreview.kills}-${matchPreview.deaths}-${matchPreview.assists}`
+      : "N/A";
 
   return (
     <>
@@ -121,6 +159,53 @@ export function ReportOverwatchModal({
             </p>
 
             <div className="mt-6 space-y-4">
+              {matchPreview ? (
+                <div className="relative overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,8,20,0.75)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)]">
+                  {mapImage ? (
+                    <>
+                      <MapPreviewImage src={mapImage} alt={mapName ?? "Map"} />
+                      <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
+                    </>
+                  ) : null}
+                  <div className="relative flex items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
+                          {matchLabel}
+                        </span>
+                        <span className="text-sm font-semibold text-white">
+                          {mapName ?? "Unknown map"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[rgba(233,228,255,0.6)]">
+                        <Swords className="h-3.5 w-3.5" />
+                        <span>
+                          {matchPreview?.playerName ?? playerName ?? "Player"}
+                        </span>
+                        <span>•</span>
+                        <span>K/D/A {statsLabel}</span>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-white">
+                      {scoreLabel}
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+                        {matchPreview?.outcome ?? "Result"}
+                      </div>
+                    </div>
+                  </div>
+                  {matchUrl ? (
+                    <a
+                      href={matchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="relative mt-3 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#9b6cff] hover:text-white"
+                    >
+                      View match
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
               <label className="block text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
                 Date of incident
                 <input
@@ -141,6 +226,17 @@ export function ReportOverwatchModal({
                   className="mt-2 w-full rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(8,6,20,0.7)] px-4 py-2 text-sm text-white"
                 />
               </label>
+              {matchUrl ? (
+                <label className="block text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
+                  Match URL
+                  <input
+                    type="url"
+                    value={matchUrl}
+                    readOnly
+                    className="mt-2 w-full rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(8,6,20,0.7)] px-4 py-2 text-sm text-white"
+                  />
+                </label>
+              ) : null}
 
               <label className="block text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
                 Cheat type

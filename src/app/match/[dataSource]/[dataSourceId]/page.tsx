@@ -13,6 +13,7 @@ type MatchStat = {
   initial_team_number?: number;
   rank?: number;
   rank_type?: string | null;
+  outcome?: string | null;
   total_kills?: number;
   total_deaths?: number;
   total_assists?: number;
@@ -182,6 +183,8 @@ export default async function MatchDetailsPage({
   params: Promise<{ dataSource: string; dataSourceId: string }>;
 }) {
   const { dataSource, dataSourceId } = await params;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://pgrepstats.vercel.app";
   const session = await getSteamSession();
   const apiKey = process.env.LEETIFY_API_KEY;
   const rawBaseUrl = getEnv(
@@ -235,8 +238,15 @@ export default async function MatchDetailsPage({
   const teamEntries = Array.from(teamMap.entries()).sort(
     ([teamA], [teamB]) => teamA - teamB
   );
+  const scorePreview: [number, number] | null =
+    teamScores.size > 0
+      ? [teamScores.get(2) ?? 0, teamScores.get(3) ?? 0]
+      : null;
 
   const rawMapName = String(match.map_name ?? "unknown").toLowerCase();
+  const matchPageUrl = `${siteUrl}/match/${encodeURIComponent(
+    dataSource
+  )}/${encodeURIComponent(dataSourceId)}`;
   const mapImage =
     rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
       ? `/map-previews/${rawMapName}.webp`
@@ -529,6 +539,18 @@ export default async function MatchDetailsPage({
                                 disabled={steamId ? bannedSet.has(steamId) : true}
                                 disabledReason="Player is already overwatch banned."
                                 viewerSteamId={session?.steamId ?? null}
+                                matchUrl={matchPageUrl}
+                                matchPreview={{
+                                  mapName: match.map_name ?? null,
+                                  dataSource: match.data_source ?? null,
+                                  score: scorePreview,
+                                  outcome: stat.outcome ?? null,
+                                  finishedAt: match.finished_at ?? null,
+                                  playerName: stat.name ?? null,
+                                  kills: stat.total_kills ?? null,
+                                  deaths: stat.total_deaths ?? null,
+                                  assists: stat.total_assists ?? null,
+                                }}
                               />
                             </td>
                           </tr>

@@ -223,14 +223,9 @@ function getPremierBadge(rating?: number | null) {
   return "/premier/1000.png";
 }
 
-function countryCodeToFlag(code?: string) {
+function countryCodeToFlagUrl(code?: string) {
   if (!code || code.length !== 2) return null;
-  const base = 0x1f1e6;
-  const chars = code.toUpperCase().split("");
-  return String.fromCodePoint(
-    base + chars[0].charCodeAt(0) - 65,
-    base + chars[1].charCodeAt(0) - 65
-  );
+  return `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
 }
 
 type MapStat = {
@@ -729,10 +724,24 @@ export async function ProfileTemplate({
               </span>
               {displayName}
               {steamProfile?.loccountrycode ? (
-                <span className="text-base text-[rgba(233,228,255,0.75)]">
-                  {countryCodeToFlag(steamProfile.loccountrycode)}{" "}
-                  {steamProfile.loccountrycode}
-                </span>
+                (() => {
+                  const flagUrl = countryCodeToFlagUrl(
+                    steamProfile.loccountrycode
+                  );
+                  return flagUrl ? (
+                    <span className="flex items-center">
+                      <img
+                        src={flagUrl}
+                        alt={steamProfile.loccountrycode}
+                        title={steamProfile.loccountrycode}
+                        className="h-4 w-6 rounded-sm border border-[rgba(155,108,255,0.35)]"
+                        loading="lazy"
+                      />
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[rgba(233,228,255,0.5)]">N/A</span>
+                  );
+                })()
               ) : (
                 <span className="text-xs text-[rgba(233,228,255,0.5)]">N/A</span>
               )}

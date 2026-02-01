@@ -18,6 +18,8 @@ type ReportPayload = {
   occurredAt?: string;
   demoUrl?: string;
   cheatType?: string;
+  matchUrl?: string | null;
+  matchPreview?: Record<string, unknown> | null;
 };
 
 export async function POST(request: Request) {
@@ -34,7 +36,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
 
-  const { targetSteamId, targetName, occurredAt, demoUrl, cheatType } = payload;
+  const {
+    targetSteamId,
+    targetName,
+    occurredAt,
+    demoUrl,
+    cheatType,
+    matchUrl,
+    matchPreview,
+  } = payload;
   if (!targetSteamId || !occurredAt || !demoUrl || !cheatType) {
     return NextResponse.json(
       { error: "Missing required fields." },
@@ -98,6 +108,8 @@ export async function POST(request: Request) {
     demo_url: demo.toString(),
     cheat_type: cheatType,
     occurred_at: occurredDate.toISOString(),
+    match_url: matchUrl ?? null,
+    match_preview: matchPreview ?? null,
     status: "pending",
   });
 
