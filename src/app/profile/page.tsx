@@ -283,6 +283,20 @@ function formatMapName(mapName: string) {
   return mapName.replace(/^de_/, "").replace(/^cs_/, "").toUpperCase();
 }
 
+function formatRelativeMatchTime(value?: string) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  const diffMs = Date.now() - date.getTime();
+  const days = Math.floor(diffMs / 86_400_000);
+  if (days < 1) return "Today";
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+}
+
 function getLifetimeValue(
   lifetime: Record<string, unknown> | undefined,
   keys: string[]
@@ -617,12 +631,13 @@ export async function ProfileTemplate({
 
   let autoFlaggedAt: string | null = null;
   let autoFlagReason: string | null = null;
+  let lastRefreshedAtMs: number | null = null;
   if (steamId && steamProfile) {
     const supabase = createSupabaseServerClient();
     if (supabase) {
       const { data: existing } = await supabase
         .from("pgrep_profiles")
-        .select("auto_flagged_at, auto_flag_reason")
+        .select("auto_flagged_at, auto_flag_reason, last_refreshed_at")
         .eq("steam_id", steamId)
         .maybeSingle();
 
@@ -630,6 +645,9 @@ export async function ProfileTemplate({
       const shouldAutoFlag = trustScore !== null && trustScore < 15;
       autoFlaggedAt = existing?.auto_flagged_at ?? null;
       autoFlagReason = existing?.auto_flag_reason ?? null;
+      lastRefreshedAtMs = existing?.last_refreshed_at
+        ? new Date(existing.last_refreshed_at).getTime()
+        : null;
 
       const updatePayload: Record<string, unknown> = {
         steam_id: steamId,
@@ -899,7 +917,9 @@ export async function ProfileTemplate({
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2" />
           <ProfileActions
-            initialRefreshedAt={initialRefreshedAt ?? Date.now()}
+            initialRefreshedAt={
+              lastRefreshedAtMs ?? initialRefreshedAt ?? Date.now()
+            }
             steamId={steamId}
           />
         </Card>
@@ -1564,6 +1584,8 @@ export async function ProfileTemplate({
                       const mapImage = rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
                         ? `/map-previews/${rawMapName}.webp`
                         : null;
+              const finishedAt =
+                typeof match.finished_at === "string" ? match.finished_at : undefined;
               return matchUrl ? (
                 <Link
                   key={`${match.id}-${dataSource}`}
@@ -1593,6 +1615,9 @@ export async function ProfileTemplate({
                     {Array.isArray(match.score)
                       ? `${match.score[0]}-${match.score[1]}`
                       : "N/A"}
+                  </div>
+                  <div className="mt-1 text-[rgba(233,228,255,0.5)]">
+                    {formatRelativeMatchTime(finishedAt)}
                   </div>
                           </div>
                 </Link>

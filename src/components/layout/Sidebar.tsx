@@ -28,7 +28,7 @@ export async function Sidebar() {
   const profileHref = session ? `/profile/${session.steamId}` : "/profile";
   const isAdmin = isAdminSteamId(session?.steamId ?? null);
   return (
-    <aside className="hidden h-screen w-64 flex-col border-r border-[rgba(155,108,255,0.2)] bg-[rgba(8,6,20,0.95)] p-6 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 flex-col overflow-y-auto border-r border-[rgba(155,108,255,0.2)] bg-[rgba(8,6,20,0.95)] p-6 md:flex">
       <div className="flex items-center gap-2 text-xl font-semibold text-white">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c4dff] to-[#9b6cff] shadow-[0_0_25px_rgba(124,77,255,0.6)]">
           <ShieldAlert className="h-5 w-5 text-white" />

@@ -44,10 +44,34 @@ export function ProfileActions({
   };
 
   const handleRefresh = async () => {
-    setLastRefreshedAt(Date.now());
-    setMinutesAgo(0);
+    if (!steamId) {
+      triggerToast("Missing Steam ID.");
+      return;
+    }
     triggerToast("Refreshing stats...");
-    router.refresh();
+    try {
+      const res = await fetch("/api/profile/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ steamId }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        triggerToast(payload?.error ?? "Refresh failed.");
+        return;
+      }
+      const payload = (await res.json().catch(() => null)) as
+        | { refreshedAt?: string }
+        | null;
+      const refreshedAt = payload?.refreshedAt
+        ? new Date(payload.refreshedAt).getTime()
+        : Date.now();
+      setLastRefreshedAt(refreshedAt);
+      setMinutesAgo(0);
+      router.refresh();
+    } catch {
+      triggerToast("Refresh failed.");
+    }
   };
 
   useEffect(() => {

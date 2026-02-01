@@ -4,6 +4,8 @@ import { getSteamSession } from "@/lib/steam-auth";
 import { trackProfileView } from "@/lib/track";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
+export const revalidate = 60;
+
 type SteamProfile = {
   personaname?: string;
   avatarfull?: string;
