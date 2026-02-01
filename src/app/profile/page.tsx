@@ -658,6 +658,7 @@ export async function ProfileTemplate({
         faceit_level: faceitLevel ?? null,
         faceit_elo: faceitElo ?? null,
         last_seen_at: nowIso,
+        last_refreshed_at: existing?.last_refreshed_at ?? null,
       };
 
       if (shouldAutoFlag) {
