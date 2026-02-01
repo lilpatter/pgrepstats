@@ -16,8 +16,8 @@ export function ProfileActions({
   const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(
     initialRefreshedAt
   );
-  const [minutesAgo, setMinutesAgo] = useState<number | null>(
-    initialRefreshedAt ? 0 : null
+  const [relativeLabel, setRelativeLabel] = useState<string>(() =>
+    initialRefreshedAt ? "Just now" : "Never refreshed"
   );
   const router = useRouter();
 
@@ -71,7 +71,7 @@ export function ProfileActions({
         ? new Date(payload.refreshedAt).getTime()
         : Date.now();
       setLastRefreshedAt(refreshedAt);
-      setMinutesAgo(0);
+      setRelativeLabel("Just now");
       router.refresh();
     } catch {
       triggerToast("Refresh failed.");
@@ -79,11 +79,26 @@ export function ProfileActions({
   };
 
   useEffect(() => {
-    if (!lastRefreshedAt) return;
-    const interval = setInterval(() => {
-      const minutes = Math.floor((Date.now() - lastRefreshedAt) / 60000);
-      setMinutesAgo(minutes);
-    }, 10000);
+    if (!lastRefreshedAt) {
+      setRelativeLabel("Never refreshed");
+      return;
+    }
+    const updateLabel = () => {
+      const diffMs = Date.now() - lastRefreshedAt;
+      if (diffMs < 60_000) {
+        setRelativeLabel("Just now");
+        return;
+      }
+      const minutes = Math.floor(diffMs / 60_000);
+      if (minutes < 60) {
+        setRelativeLabel(`${minutes} min ago`);
+        return;
+      }
+      const hours = Math.floor(minutes / 60);
+      setRelativeLabel(`${hours} hour${hours === 1 ? "" : "s"} ago`);
+    };
+    updateLabel();
+    const interval = setInterval(updateLabel, 5000);
     return () => clearInterval(interval);
   }, [lastRefreshedAt]);
 
@@ -108,7 +123,7 @@ export function ProfileActions({
         Refresh stats
       </button>
       <div className="text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
-        {minutesAgo === null ? "Never refreshed" : `Refreshed ${minutesAgo} min ago`}
+        Refreshed {relativeLabel}
       </div>
       {toast && (
         <div className="absolute -top-10 left-0 rounded-2xl border border-[rgba(155,108,255,0.4)] bg-[rgba(20,16,40,0.9)] px-4 py-2 text-xs text-white shadow-[0_0_24px_rgba(124,77,255,0.4)]">
