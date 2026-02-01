@@ -114,6 +114,8 @@ export default async function ReportedPlayersPage({
   let pending = 0;
   let approved = 0;
   let declined = 0;
+  let mine = 0;
+  let against = 0;
 
   if (supabase) {
     const { count: totalCount } = await supabase
@@ -138,6 +140,20 @@ export default async function ReportedPlayersPage({
       .select("id", { count: "exact", head: true })
       .eq("status", "declined");
     declined = declinedCount ?? 0;
+
+    if (session?.steamId) {
+      const { count: mineCount } = await supabase
+        .from("overwatch_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("reporter_steam_id", session.steamId);
+      mine = mineCount ?? 0;
+
+      const { count: againstCount } = await supabase
+        .from("overwatch_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("target_steam_id", session.steamId);
+      against = againstCount ?? 0;
+    }
 
     const from = page * pageSize;
     const to = from + pageSize - 1;
@@ -215,8 +231,8 @@ export default async function ReportedPlayersPage({
             { key: "pending", label: "Pending", count: pending },
             { key: "approved", label: "Convicted", count: approved },
             { key: "declined", label: "Insufficient", count: declined },
-            { key: "mine", label: "My Reports", count: 0 },
-            { key: "against", label: "Against Me", count: 0 },
+            { key: "mine", label: "My Reports", count: mine },
+            { key: "against", label: "Against Me", count: against },
           ].map((item) => (
             <Link
               key={item.key}
