@@ -71,6 +71,31 @@ export async function POST(request: Request) {
   );
 
   if (!created) {
+    if (job.status === "queued") {
+      try {
+        const result = await runRefreshJob(supabase, job.id, payload.steamId);
+        return NextResponse.json(
+          {
+            ok: true,
+            status: "completed",
+            jobId: job.id,
+            refreshedAt: result.refreshedAt,
+          },
+          { status: 200 }
+        );
+      } catch (error) {
+        return NextResponse.json(
+          {
+            ok: false,
+            status: "failed",
+            jobId: job.id,
+            error: error instanceof Error ? error.message : "Refresh failed.",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     return NextResponse.json(
       { ok: true, status: job.status, jobId: job.id },
       { status: 200 }
