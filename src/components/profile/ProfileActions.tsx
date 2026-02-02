@@ -219,12 +219,20 @@ export function ProfileActions({
         {refreshState === "refreshing" ? "Refreshing..." : "Refresh stats"}
       </button>
       {refreshState === "queued" ? (
-        <div className="text-[10px] uppercase tracking-[0.2em] text-[#9b6cff]">
+        <div
+          className="text-[10px] uppercase tracking-[0.2em] text-[#9b6cff]"
+          role="status"
+          aria-live="polite"
+        >
           Refresh queued{queuedEta ? ` • ~${queuedEta}s` : ""}
         </div>
       ) : null}
       {cooldownSeconds ? (
-        <div className="text-[10px] uppercase tracking-[0.2em] text-[#ff8c40]">
+        <div
+          className="text-[10px] uppercase tracking-[0.2em] text-[#ff8c40]"
+          role="status"
+          aria-live="polite"
+        >
           Cooldown {cooldownSeconds}s
         </div>
       ) : null}
@@ -232,7 +240,11 @@ export function ProfileActions({
         Refreshed {relativeLabel}
       </div>
       {toast && (
-        <div className="absolute -top-10 left-0 rounded-2xl border border-[rgba(155,108,255,0.4)] bg-[rgba(20,16,40,0.9)] px-4 py-2 text-xs text-white shadow-[0_0_24px_rgba(124,77,255,0.4)]">
+        <div
+          className="absolute -top-10 left-0 rounded-2xl border border-[rgba(155,108,255,0.4)] bg-[rgba(20,16,40,0.9)] px-4 py-2 text-xs text-white shadow-[0_0_24px_rgba(124,77,255,0.4)]"
+          role="status"
+          aria-live="polite"
+        >
           {toast}
         </div>
       )}

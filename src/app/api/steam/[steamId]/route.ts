@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { fetchSteamProfile } from "@/lib/profile-sources";
 import { jsonWithCache } from "@/lib/cache";
+import { getPublicError } from "@/lib/utils";
 
 export async function GET(
   request: Request,
@@ -34,7 +35,9 @@ export async function GET(
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error.",
+        error: getPublicError(
+          error instanceof Error ? error.message : "Unknown error."
+        ),
       },
       { status: 500 }
     );

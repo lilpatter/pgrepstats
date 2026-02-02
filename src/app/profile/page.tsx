@@ -734,7 +734,11 @@ export async function ProfileTemplate({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         {providerAlerts.length ? (
-          <div className="rounded-2xl border border-[rgba(255,140,64,0.4)] bg-[rgba(20,16,40,0.7)] px-4 py-3 text-xs text-[rgba(233,228,255,0.75)]">
+          <div
+            className="rounded-2xl border border-[rgba(255,140,64,0.4)] bg-[rgba(20,16,40,0.7)] px-4 py-3 text-xs text-[rgba(233,228,255,0.75)]"
+            role="status"
+            aria-live="polite"
+          >
             Some providers are unavailable. Data may be stale.
             <div className="mt-2 space-y-1 text-[rgba(233,228,255,0.65)]">
               {providerAlerts.map((message) => (
@@ -1294,7 +1298,9 @@ export async function ProfileTemplate({
                           </div>
                         ))
                       ) : (
-                        <div className="text-xs text-[rgba(233,228,255,0.6)]">N/A</div>
+                        <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                          No recent games in the last 2 weeks.
+                        </div>
                       )}
                     </div>
                   </Card>
@@ -1555,16 +1561,22 @@ export async function ProfileTemplate({
               </TabsContent>
 
               <TabsContent value="faceit">
-                <ClientFaceitStats
-                  faceitProfile={faceitProfileData}
-                  statsCs2={faceitStatsCs2}
-                  statsCsgo={faceitStatsCsgo}
-                  historyCs2={faceitHistoryCs2}
-                  historyCsgo={faceitHistoryCsgo}
-                  hubs={faceitHubs}
-                  teams={faceitTeams}
-                  tournaments={faceitTournaments}
-                />
+                {faceitProfileData ? (
+                  <ClientFaceitStats
+                    faceitProfile={faceitProfileData}
+                    statsCs2={faceitStatsCs2}
+                    statsCsgo={faceitStatsCsgo}
+                    historyCs2={faceitHistoryCs2}
+                    historyCsgo={faceitHistoryCsgo}
+                    hubs={faceitHubs}
+                    teams={faceitTeams}
+                    tournaments={faceitTournaments}
+                  />
+                ) : (
+                  <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] p-4 text-xs text-[rgba(233,228,255,0.65)]">
+                    No FACEIT profile found. Link your FACEIT account to see stats.
+                  </div>
+                )}
               </TabsContent>
             </Card>
           </Tabs>
@@ -1577,8 +1589,8 @@ export async function ProfileTemplate({
         </CardDescription>
         <HorizontalScroll className="flex gap-3">
           {combinedMatches.length === 0 ? (
-            <div className="min-w-[220px] rounded-2xl border border-[rgba(155,108,255,0.3)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
-              N/A
+            <div className="min-w-[260px] rounded-2xl border border-[rgba(155,108,255,0.3)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+              No matches found yet. Play a few games and refresh to populate.
             </div>
           ) : (
             combinedMatches.slice(0, 30).map((match) => {

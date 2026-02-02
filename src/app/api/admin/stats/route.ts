@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { requireAdminSession } from "@/lib/admin";
+import { getPublicError } from "@/lib/utils";
 
 const ACTIVE_WINDOW_MINUTES = 5;
 
 export async function GET(request: Request) {
+  const { isAdmin } = await requireAdminSession();
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const adminToken = process.env.ADMIN_STATS_TOKEN;
   if (!adminToken) {
     return NextResponse.json(
-      { error: "ADMIN_STATS_TOKEN is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
@@ -20,7 +27,7 @@ export async function GET(request: Request) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
@@ -46,11 +53,7 @@ export async function GET(request: Request) {
   if (activeUsers.error || indexedProfiles.error) {
     return NextResponse.json(
       {
-        error: "Failed to load stats.",
-        details: {
-          activeUsers: activeUsers.error?.message ?? null,
-          indexedProfiles: indexedProfiles.error?.message ?? null,
-        },
+        error: getPublicError("Failed to load stats."),
       },
       { status: 500 }
     );

@@ -11,3 +11,7 @@ export function sanitizeText(value: string) {
     .replace(/[\u0000-\u001F\u007F]/g, "")
     .trim();
 }
+
+export function getPublicError(message: string, fallback = "Service unavailable.") {
+  return process.env.NODE_ENV === "production" ? fallback : message;
+}

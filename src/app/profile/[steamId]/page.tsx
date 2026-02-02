@@ -43,7 +43,7 @@ async function fetchSteamProfile(steamId: string) {
   const apiKey = getEnv("STEAM_WEB_API_KEY");
   const summaryRes = await fetch(
     `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`,
-    { next: { revalidate: 60 } }
+    { cache: "no-store" }
   );
   if (!summaryRes.ok) {
     throw new Error("Steam profile fetch failed.");
@@ -53,7 +53,7 @@ async function fetchSteamProfile(steamId: string) {
 
   const gamesRes = await fetch(
     `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&appids_filter[0]=730&include_appinfo=true`,
-    { next: { revalidate: 300 } }
+    { cache: "no-store" }
   );
   const gamesData = gamesRes.ok ? await gamesRes.json() : null;
   const cs2 = (gamesData?.response?.games?.[0] as SteamGame) ?? null;
@@ -62,7 +62,7 @@ async function fetchSteamProfile(steamId: string) {
   try {
     const friendsRes = await fetch(
       `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${apiKey}&steamid=${steamId}&relationship=friend`,
-      { next: { revalidate: 300 } }
+      { cache: "no-store" }
     );
     if (friendsRes.ok) {
       const friendsData = await friendsRes.json();
@@ -77,7 +77,7 @@ async function fetchSteamProfile(steamId: string) {
   try {
     const recentRes = await fetch(
       `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=${apiKey}&steamid=${steamId}&count=4`,
-      { next: { revalidate: 300 } }
+      { cache: "no-store" }
     );
     if (recentRes.ok) {
       const recentData = await recentRes.json();
@@ -91,7 +91,7 @@ async function fetchSteamProfile(steamId: string) {
   try {
     const levelRes = await fetch(
       `https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${apiKey}&steamid=${steamId}`,
-      { next: { revalidate: 300 } }
+      { cache: "no-store" }
     );
     if (levelRes.ok) {
       const levelData = await levelRes.json();

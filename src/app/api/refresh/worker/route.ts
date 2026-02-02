@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         ok: false,
         jobId: job.id,
         steamId: job.steam_id,
-        error: error instanceof Error ? error.message : "Refresh failed.",
+        error: "Refresh failed.",
       },
       { status: 500 }
     );

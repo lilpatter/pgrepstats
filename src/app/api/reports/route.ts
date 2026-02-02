@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
-import { sanitizeText } from "@/lib/utils";
+import { getPublicError, sanitizeText } from "@/lib/utils";
 import { z } from "zod";
 
 const ALLOWED_TYPES = new Set([
@@ -116,7 +116,10 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: getPublicError(error.message) },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true }, { status: 200 });

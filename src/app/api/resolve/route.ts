@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getEnv } from "@/lib/env";
+import { getPublicError } from "@/lib/utils";
 
 function extractSteamId(input: string) {
   const match = input.match(/\b(\d{17})\b/);
@@ -124,7 +125,9 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to resolve.",
+        error: getPublicError(
+          error instanceof Error ? error.message : "Unable to resolve."
+        ),
       },
       { status: 400 }
     );
