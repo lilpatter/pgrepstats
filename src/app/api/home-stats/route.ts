@@ -1,8 +1,9 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { jsonWithCache } from "@/lib/cache";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createSupabaseServerClient();
     if (supabase) {
@@ -44,14 +45,15 @@ export async function GET() {
         !reportsCount.error ||
         !autoFlagCount.error
       ) {
-        return Response.json(
+        return jsonWithCache(
+          request,
           {
             playersIndexed: profilesCount.count ?? 0,
             activeUsers: activeUsersCount.count ?? 0,
             reportsSubmitted,
             aiAutoFlagged,
           },
-          { status: 200 }
+          { maxAgeSeconds: 30, staleWhileRevalidateSeconds: 60 }
         );
       }
     }
@@ -59,16 +61,20 @@ export async function GET() {
     const filePath = join(process.cwd(), "data", "home-stats.json");
     const raw = await readFile(filePath, "utf-8");
     const data = JSON.parse(raw) as Record<string, number | null>;
-    return Response.json(data, { status: 200 });
+    return jsonWithCache(request, data, {
+      maxAgeSeconds: 30,
+      staleWhileRevalidateSeconds: 60,
+    });
   } catch {
-    return Response.json(
+    return jsonWithCache(
+      request,
       {
         playersIndexed: null,
         activeUsers: null,
         reportsSubmitted: null,
         aiAutoFlagged: null,
       },
-      { status: 200 }
+      { maxAgeSeconds: 30, staleWhileRevalidateSeconds: 60 }
     );
   }
 }

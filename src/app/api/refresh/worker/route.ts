@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase";
-import { claimNextQueuedJob, runRefreshJob } from "@/lib/refresh-queue";
+import {
+  claimNextQueuedJob,
+  cleanupStaleJobs,
+  runRefreshJob,
+} from "@/lib/refresh-queue";
 
 export async function POST(request: Request) {
   const workerKey = process.env.REFRESH_WORKER_KEY;
@@ -12,10 +16,12 @@ export async function POST(request: Request) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
+
+  await cleanupStaleJobs(supabase);
 
   const job = await claimNextQueuedJob(supabase);
   if (!job) {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
-import { enqueueRefreshJob, runRefreshJob } from "@/lib/refresh-queue";
+import {
+  cleanupStaleJobs,
+  enqueueRefreshJob,
+  runRefreshJob,
+} from "@/lib/refresh-queue";
 import { verifyCsrf } from "@/lib/csrf";
 import { z } from "zod";
 
@@ -37,6 +41,8 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  await cleanupStaleJobs(supabase);
 
   const cooldownMinutes = Number(process.env.REFRESH_COOLDOWN_MINUTES ?? "5");
   if (cooldownMinutes > 0) {

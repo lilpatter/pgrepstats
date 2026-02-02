@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { fetchSteamProfile } from "@/lib/profile-sources";
+import { jsonWithCache } from "@/lib/cache";
 
 export async function GET(
   request: Request,
@@ -19,18 +20,15 @@ export async function GET(
     const { steamId } = await context.params;
     const profileData = await fetchSteamProfile(steamId);
 
-    return NextResponse.json(
+    return jsonWithCache(
+      request,
       {
         ok: true,
         steamId,
         profile: profileData.profile ?? null,
         cs2: profileData.cs2 ?? null,
       },
-      {
-        headers: {
-          "Cache-Control": "s-maxage=60, stale-while-revalidate=120",
-        },
-      }
+      { maxAgeSeconds: 60, staleWhileRevalidateSeconds: 120 }
     );
   } catch (error) {
     return NextResponse.json(

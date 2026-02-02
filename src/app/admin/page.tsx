@@ -39,7 +39,15 @@ export default async function AdminPage() {
     Date.now() - ACTIVE_WINDOW_MINUTES * 60 * 1000
   ).toISOString();
 
-  const [activeUsers, indexedProfiles, reports] = await Promise.all([
+  const [
+    activeUsers,
+    indexedProfiles,
+    reports,
+    queuedJobs,
+    processingJobs,
+    failedJobs,
+    completedJobs,
+  ] = await Promise.all([
     supabase
       .from("pgrep_users")
       .select("steam_id, persona_name, last_path, last_seen_at")
@@ -58,12 +66,32 @@ export default async function AdminPage() {
       )
       .order("created_at", { ascending: false })
       .limit(200),
+    supabase
+      .from("refresh_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "queued"),
+    supabase
+      .from("refresh_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "processing"),
+    supabase
+      .from("refresh_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "failed"),
+    supabase
+      .from("refresh_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "completed"),
   ]);
 
   const activeList = activeUsers.data ?? [];
   const indexedList = indexedProfiles.data ?? [];
   const reportList = reports.data ?? [];
   const approvedList = reportList.filter((report) => report.status === "approved");
+  const queuedCount = queuedJobs.count ?? 0;
+  const processingCount = processingJobs.count ?? 0;
+  const failedCount = failedJobs.count ?? 0;
+  const completedCount = completedJobs.count ?? 0;
 
   return (
     <div className="space-y-6">
@@ -93,6 +121,33 @@ export default async function AdminPage() {
           <CardDescription>Profiles seen by the system.</CardDescription>
           <div className="text-2xl font-semibold text-white">
             {indexedList.length}
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="space-y-2 p-4">
+          <CardTitle>Refresh Queue</CardTitle>
+          <CardDescription>Jobs waiting to run.</CardDescription>
+          <div className="text-2xl font-semibold text-white">{queuedCount}</div>
+        </Card>
+        <Card className="space-y-2 p-4">
+          <CardTitle>Processing</CardTitle>
+          <CardDescription>Jobs running now.</CardDescription>
+          <div className="text-2xl font-semibold text-white">{processingCount}</div>
+        </Card>
+        <Card className="space-y-2 p-4">
+          <CardTitle>Failed Jobs</CardTitle>
+          <CardDescription>Retry or inspect errors.</CardDescription>
+          <div className="text-2xl font-semibold text-[#ff5a7a]">
+            {failedCount}
+          </div>
+        </Card>
+        <Card className="space-y-2 p-4">
+          <CardTitle>Completed</CardTitle>
+          <CardDescription>Jobs completed.</CardDescription>
+          <div className="text-2xl font-semibold text-white">
+            {completedCount}
           </div>
         </Card>
       </div>

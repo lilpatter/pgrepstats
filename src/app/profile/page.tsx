@@ -5,15 +5,39 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
-import { ProgressRing } from "@/components/charts/ProgressRing";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
-import { FaceitStats } from "@/components/profile/FaceitStats";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { AutoFlagBadge } from "@/components/profile/AutoFlagBadge";
+import dynamic from "next/dynamic";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { getSteamSession } from "@/lib/steam-auth";
 import { redirect } from "next/navigation";
+
+const ProgressRing = dynamic(
+  () => import("@/components/charts/ProgressRing").then((mod) => mod.ProgressRing),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[120px] w-[120px] items-center justify-center">
+        <Skeleton className="h-20 w-20 rounded-full" />
+      </div>
+    ),
+  }
+);
+
+const FaceitStats = dynamic(
+  () => import("@/components/profile/FaceitStats").then((mod) => mod.FaceitStats),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] p-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="mt-3 h-32 w-full" />
+      </div>
+    ),
+  }
+);
 
 type SteamProfile = {
   personaname?: string;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { fetchLeetifyProfile } from "@/lib/profile-sources";
+import { jsonWithCache } from "@/lib/cache";
 
 export async function GET(
   request: Request,
@@ -19,17 +20,14 @@ export async function GET(
     const { steamId } = await context.params;
     const profile = await fetchLeetifyProfile(steamId);
 
-    return NextResponse.json(
+    return jsonWithCache(
+      request,
       {
         ok: true,
         steamId,
         profile,
       },
-      {
-        headers: {
-          "Cache-Control": "s-maxage=60, stale-while-revalidate=120",
-        },
-      }
+      { maxAgeSeconds: 60, staleWhileRevalidateSeconds: 120 }
     );
   } catch (error) {
     return NextResponse.json(

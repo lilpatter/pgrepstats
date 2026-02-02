@@ -26,6 +26,24 @@ type RefreshJobRow = {
   finished_at?: string | null;
 };
 
+const BACKOFF_BASE_SECONDS = Number(
+  process.env.REFRESH_BACKOFF_BASE_SECONDS ?? "60"
+);
+const MAX_BACKOFF_SECONDS = Number(
+  process.env.REFRESH_BACKOFF_MAX_SECONDS ?? "900"
+);
+const PROCESSING_TIMEOUT_MINUTES = Number(
+  process.env.REFRESH_PROCESSING_TIMEOUT_MINUTES ?? "15"
+);
+const QUEUE_TIMEOUT_MINUTES = Number(
+  process.env.REFRESH_QUEUE_TIMEOUT_MINUTES ?? "120"
+);
+
+function computeBackoffSeconds(attemptCount: number) {
+  const exponential = BACKOFF_BASE_SECONDS * Math.pow(2, attemptCount);
+  return Math.min(MAX_BACKOFF_SECONDS, Math.max(BACKOFF_BASE_SECONDS, exponential));
+}
+
 export async function enqueueRefreshJob(
   supabase: any,
   steamId: string,
@@ -69,6 +87,14 @@ export async function runRefreshJob(
   jobId: string,
   steamId: string
 ) {
+  const { data: jobRow } = await supabase
+    .from("refresh_queue")
+    .select(
+      "id, attempt_count, max_attempts, status, created_at, started_at, updated_at"
+    )
+    .eq("id", jobId)
+    .maybeSingle();
+
   const nowIso = new Date().toISOString();
   await supabase
     .from("refresh_queue")
@@ -101,15 +127,35 @@ export async function runRefreshJob(
   );
 
   if (upsertError) {
-    await supabase
-      .from("refresh_queue")
-      .update({
-        status: "failed",
-        last_error: upsertError.message,
-        finished_at: nowDoneIso,
-        updated_at: nowDoneIso,
-      })
-      .eq("id", jobId);
+    const nextAttempt = (jobRow?.attempt_count ?? 0) + 1;
+    const maxAttempts = jobRow?.max_attempts ?? 3;
+    if (nextAttempt >= maxAttempts) {
+      await supabase
+        .from("refresh_queue")
+        .update({
+          status: "failed",
+          attempt_count: nextAttempt,
+          last_error: upsertError.message,
+          finished_at: nowDoneIso,
+          updated_at: nowDoneIso,
+        })
+        .eq("id", jobId);
+    } else {
+      const backoffSeconds = computeBackoffSeconds(nextAttempt);
+      const nextAttemptAt = new Date(
+        Date.now() + backoffSeconds * 1000
+      ).toISOString();
+      await supabase
+        .from("refresh_queue")
+        .update({
+          status: "queued",
+          attempt_count: nextAttempt,
+          last_error: upsertError.message,
+          next_attempt_at: nextAttemptAt,
+          updated_at: nowDoneIso,
+        })
+        .eq("id", jobId);
+    }
     throw new Error(upsertError.message);
   }
 
@@ -131,7 +177,7 @@ export async function claimNextQueuedJob(
   const nowIso = new Date().toISOString();
   const { data } = await supabase
     .from("refresh_queue")
-    .select("id, steam_id, status, next_attempt_at")
+    .select("id, steam_id, status, next_attempt_at, attempt_count, max_attempts")
     .eq("status", "queued")
     .or(`next_attempt_at.is.null,next_attempt_at.lte.${nowIso}`)
     .order("created_at", { ascending: true })
@@ -149,4 +195,34 @@ export async function claimNextQueuedJob(
   if (error) return null;
 
   return { id: data.id, steam_id: data.steam_id };
+}
+
+export async function cleanupStaleJobs(supabase: any) {
+  const now = Date.now();
+  const processingCutoff = new Date(
+    now - PROCESSING_TIMEOUT_MINUTES * 60 * 1000
+  ).toISOString();
+  const queuedCutoff = new Date(
+    now - QUEUE_TIMEOUT_MINUTES * 60 * 1000
+  ).toISOString();
+
+  await supabase
+    .from("refresh_queue")
+    .update({
+      status: "failed",
+      last_error: "Processing timeout.",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("status", "processing")
+    .lt("started_at", processingCutoff);
+
+  await supabase
+    .from("refresh_queue")
+    .update({
+      status: "cancelled",
+      last_error: "Queue timeout.",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("status", "queued")
+    .lt("created_at", queuedCutoff);
 }
