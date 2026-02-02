@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
+import { z } from "zod";
 
 const ALLOWED_TYPES = new Set([
   "Aim",
@@ -13,15 +14,15 @@ const ALLOWED_TYPES = new Set([
   "Other",
 ]);
 
-type ReportPayload = {
-  targetSteamId?: string;
-  targetName?: string | null;
-  occurredAt?: string;
-  demoUrl?: string;
-  cheatType?: string;
-  matchUrl?: string | null;
-  matchPreview?: Record<string, unknown> | null;
-};
+const reportSchema = z.object({
+  targetSteamId: z.string().min(1),
+  targetName: z.string().nullable().optional(),
+  occurredAt: z.string().min(1),
+  demoUrl: z.string().min(1),
+  cheatType: z.string().min(1),
+  matchUrl: z.string().url().nullable().optional(),
+  matchPreview: z.record(z.string(), z.unknown()).nullable().optional(),
+});
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -32,14 +33,15 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!verifyCsrf(request)) {
+  if (!(await verifyCsrf(request))) {
     return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
-  const payload = (await request.json().catch(() => null)) as ReportPayload | null;
-  if (!payload) {
+  const parsed = reportSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
+  const payload = parsed.data;
 
   const {
     targetSteamId,
@@ -50,13 +52,6 @@ export async function POST(request: Request) {
     matchUrl,
     matchPreview,
   } = payload;
-  if (!targetSteamId || !occurredAt || !demoUrl || !cheatType) {
-    return NextResponse.json(
-      { error: "Missing required fields." },
-      { status: 400 }
-    );
-  }
-
   if (!ALLOWED_TYPES.has(cheatType)) {
     return NextResponse.json(
       { error: "Invalid cheat type." },

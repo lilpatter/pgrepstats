@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
+import { z } from "zod";
+
+const payloadSchema = z.object({
+  path: z.string().max(200).nullable().optional(),
+});
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -9,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  if (!verifyCsrf(request)) {
+  if (!(await verifyCsrf(request))) {
     return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
@@ -18,10 +23,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { path?: string | null }
-    | null;
-  const path = body?.path ?? null;
+  const parsed = payloadSchema.safeParse(
+    await request.json().catch(() => null)
+  );
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+  }
+  const path = parsed.data.path ?? null;
   const now = new Date().toISOString();
 
   await supabase

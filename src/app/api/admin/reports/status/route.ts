@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
+import { z } from "zod";
 
 const ALLOWED_STATUS = new Set(["approved", "declined", "pending"]);
+const payloadSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  status: z.enum(["approved", "declined", "pending"]),
+});
 
 export async function POST(request: Request) {
   const { isAdmin, session } = await requireAdminSession();
@@ -11,16 +16,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!verifyCsrf(request)) {
+  if (!(await verifyCsrf(request))) {
     return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | { id?: number; status?: string }
-    | null;
-  if (!payload?.id || !payload?.status) {
+  const parsed = payloadSchema.safeParse(
+    await request.json().catch(() => null)
+  );
+  if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
+  const payload = parsed.data;
 
   if (!ALLOWED_STATUS.has(payload.status)) {
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });

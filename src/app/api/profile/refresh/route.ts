@@ -3,6 +3,11 @@ import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { enqueueRefreshJob, runRefreshJob } from "@/lib/refresh-queue";
 import { verifyCsrf } from "@/lib/csrf";
+import { z } from "zod";
+
+const payloadSchema = z.object({
+  steamId: z.string().min(1),
+});
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -13,16 +18,17 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!verifyCsrf(request)) {
+  if (!(await verifyCsrf(request))) {
     return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | { steamId?: string }
-    | null;
-  if (!payload?.steamId) {
-    return NextResponse.json({ error: "Missing steamId." }, { status: 400 });
+  const parsed = payloadSchema.safeParse(
+    await request.json().catch(() => null)
+  );
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
+  const payload = parsed.data;
 
   const supabase = createSupabaseServerClient();
   if (!supabase) {

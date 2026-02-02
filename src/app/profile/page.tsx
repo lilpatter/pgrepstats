@@ -12,6 +12,8 @@ import { FaceitStats } from "@/components/profile/FaceitStats";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { AutoFlagBadge } from "@/components/profile/AutoFlagBadge";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { getSteamSession } from "@/lib/steam-auth";
+import { redirect } from "next/navigation";
 
 type SteamProfile = {
   personaname?: string;
@@ -1647,7 +1649,11 @@ export async function ProfileTemplate({
   );
 }
 
-export default function ProfilePage() {
-  return <ProfileTemplate />;
+export default async function ProfilePage() {
+  const session = await getSteamSession();
+  if (!session?.steamId) {
+    redirect("/");
+  }
+  redirect(`/profile/${session.steamId}`);
 }
 
