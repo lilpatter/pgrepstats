@@ -2,14 +2,19 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { getCsrfToken } from "@/lib/csrf-client";
 
 const HEARTBEAT_INTERVAL_MS = 60_000;
 
 async function sendHeartbeat(path: string) {
   try {
+    const csrfToken = getCsrfToken();
     await fetch("/api/track/heartbeat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+      },
       body: JSON.stringify({ path }),
     });
   } catch {

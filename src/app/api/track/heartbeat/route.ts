@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
   if (!session?.steamId) {
     return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
   const supabase = createSupabaseServerClient();

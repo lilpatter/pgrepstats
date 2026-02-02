@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getCsrfToken } from "@/lib/csrf-client";
 
 type ReportModerationActionsProps = {
   reportId: number;
@@ -21,9 +22,13 @@ export function ReportModerationActions({
     setError(null);
     startTransition(async () => {
       try {
+        const csrfToken = getCsrfToken();
         const res = await fetch("/api/admin/reports/status", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+          },
           body: JSON.stringify({ id: reportId, status: nextStatus }),
         });
         if (!res.ok) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { verifyCsrf } from "@/lib/csrf";
 
 const ALLOWED_STATUS = new Set(["approved", "declined", "pending"]);
 
@@ -8,6 +9,10 @@ export async function POST(request: Request) {
   const { isAdmin, session } = await requireAdminSession();
   if (!isAdmin) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
   const payload = (await request.json().catch(() => null)) as

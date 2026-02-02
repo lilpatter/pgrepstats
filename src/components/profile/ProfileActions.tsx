@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Copy, RefreshCw, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getCsrfToken } from "@/lib/csrf-client";
 
 export function ProfileActions({
   initialRefreshedAt,
@@ -22,6 +23,7 @@ export function ProfileActions({
   const [refreshState, setRefreshState] = useState<
     "idle" | "refreshing" | "queued"
   >("idle");
+  const [queuedJobId, setQueuedJobId] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState<number | null>(null);
   const router = useRouter();
 
@@ -60,9 +62,13 @@ export function ProfileActions({
     setCooldownSeconds(null);
     triggerToast("Refreshing stats...");
     try {
+      const csrfToken = getCsrfToken();
       const res = await fetch("/api/profile/refresh", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+        },
         body: JSON.stringify({ steamId }),
       });
       if (!res.ok) {
@@ -79,10 +85,11 @@ export function ProfileActions({
         return;
       }
       const payload = (await res.json().catch(() => null)) as
-        | { refreshedAt?: string; status?: string }
+        | { refreshedAt?: string; status?: string; jobId?: string }
         | null;
       if (payload?.status === "queued" || payload?.status === "processing") {
         setRefreshState("queued");
+        setQueuedJobId(payload?.jobId ?? null);
         triggerToast("Refresh queued. It will update shortly.");
         return;
       }
@@ -91,10 +98,12 @@ export function ProfileActions({
         setLastRefreshedAt(refreshedAt);
         setRelativeLabel("Just now");
         setRefreshState("idle");
+        setQueuedJobId(null);
         router.refresh();
         return;
       }
       setRefreshState("queued");
+      setQueuedJobId(payload?.jobId ?? null);
       triggerToast("Refresh queued. It will update shortly.");
     } catch {
       setRefreshState("idle");
@@ -136,6 +145,43 @@ export function ProfileActions({
     }, 1000);
     return () => clearInterval(interval);
   }, [cooldownSeconds]);
+
+  useEffect(() => {
+    if (refreshState !== "queued" || !steamId) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/profile/refresh/status?steamId=${encodeURIComponent(steamId)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const payload = (await res.json().catch(() => null)) as
+          | {
+              job?: { id?: string; status?: string; finished_at?: string | null };
+              lastRefreshedAt?: string | null;
+            }
+          | null;
+        const jobStatus = payload?.job?.status ?? null;
+        const jobId = payload?.job?.id ?? null;
+        if (queuedJobId && jobId && queuedJobId !== jobId) return;
+        if (jobStatus === "completed" || jobStatus === "failed") {
+          setRefreshState("idle");
+          setQueuedJobId(null);
+          if (payload?.lastRefreshedAt) {
+            const refreshedAt = new Date(payload.lastRefreshedAt).getTime();
+            setLastRefreshedAt(refreshedAt);
+            setRelativeLabel("Just now");
+            router.refresh();
+          }
+        }
+      } catch {
+        // Ignore polling errors.
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [refreshState, steamId, queuedJobId, router]);
 
   return (
     <div className="relative flex w-full flex-col items-center gap-3">

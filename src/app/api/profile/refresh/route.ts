@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { enqueueRefreshJob, runRefreshJob } from "@/lib/refresh-queue";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -10,6 +11,10 @@ export async function POST(request: Request) {
       { error: "You must be logged in." },
       { status: 401 }
     );
+  }
+
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
   const payload = (await request.json().catch(() => null)) as

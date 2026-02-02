@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { getCsrfToken } from "@/lib/csrf-client";
 import { AlertTriangle, ExternalLink, Swords, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
@@ -76,9 +77,13 @@ export function ReportOverwatchModal({
     try {
       setSubmitting(true);
       setMessage(null);
+        const csrfToken = getCsrfToken();
       const res = await fetch("/api/reports", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+          },
         body: JSON.stringify({
           targetSteamId: steamId,
           targetName: playerName ?? null,

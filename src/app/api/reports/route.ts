@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { verifyCsrf } from "@/lib/csrf";
 
 const ALLOWED_TYPES = new Set([
   "Aim",
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
       { error: "You must be logged in to report." },
       { status: 401 }
     );
+  }
+
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
   }
 
   const payload = (await request.json().catch(() => null)) as ReportPayload | null;
