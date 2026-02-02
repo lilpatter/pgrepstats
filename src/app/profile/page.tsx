@@ -1226,48 +1226,64 @@ export async function ProfileTemplate({
                 </div>
               </TabsContent>
               <TabsContent value="steam">
-                <div className="grid gap-4 lg:grid-cols-4">
-                  <Card className="space-y-2">
-                    <CardDescription>Status</CardDescription>
-                    <div className="text-2xl font-semibold text-white">
-                      {personaLabel}
-                    </div>
-                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                      Last online: {lastOnline}
-                    </div>
-                  </Card>
-                  <Card className="space-y-2">
-                    <CardDescription>Friends</CardDescription>
-                    <div className="text-2xl font-semibold text-white">
-                      {steamFriendsCount ?? "N/A"}
-                    </div>
-                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                      Public profiles only
-                    </div>
-                  </Card>
-                  <Card className="space-y-2">
-                    <CardDescription>Recent Playtime</CardDescription>
-                    <div className="text-2xl font-semibold text-white">
-                      {steamRecentGames?.length
-                        ? `${Math.round(
-                            (steamRecentGames[0]?.playtime_2weeks ?? 0) / 60
-                          )}h`
-                        : "N/A"}
-                    </div>
-                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                      Last 2 weeks
-                    </div>
-                  </Card>
-                  <Card className="space-y-2">
-                    <CardDescription>Steam Level</CardDescription>
-                    <div className="text-2xl font-semibold text-white">
-                      {steamLevel ?? "N/A"}
-                    </div>
-                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                      Current level
-                    </div>
-                  </Card>
+                <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] px-4 py-3 text-xs text-[rgba(233,228,255,0.6)]">
+                  Live Steam data refreshes each time you open this page.
                 </div>
+
+                {hasSteam ? (
+                  <div className="mt-4 grid gap-4 lg:grid-cols-4">
+                    <Card className="space-y-2">
+                      <CardDescription>Status</CardDescription>
+                      <div className="text-2xl font-semibold text-white">
+                        {personaLabel}
+                      </div>
+                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                        Last online: {lastOnline}
+                      </div>
+                    </Card>
+                    <Card className="space-y-2">
+                      <CardDescription>Friends</CardDescription>
+                      <div className="text-2xl font-semibold text-white">
+                        {steamFriendsCount ?? "N/A"}
+                      </div>
+                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                        Public profiles only
+                      </div>
+                    </Card>
+                    <Card className="space-y-2">
+                      <CardDescription>Recent Playtime</CardDescription>
+                      <div className="text-2xl font-semibold text-white">
+                        {steamRecentGames?.length
+                          ? `${Math.round(
+                              (steamRecentGames[0]?.playtime_2weeks ?? 0) / 60
+                            )}h`
+                          : "N/A"}
+                      </div>
+                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                        Last 2 weeks
+                      </div>
+                    </Card>
+                    <Card className="space-y-2">
+                      <CardDescription>Steam Level</CardDescription>
+                      <div className="text-2xl font-semibold text-white">
+                        {steamLevel ?? "N/A"}
+                      </div>
+                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                        Current level
+                      </div>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="mt-4 grid gap-4 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Card key={`steam-skel-${index}`} className="space-y-2">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-8 w-28" />
+                        <Skeleton className="h-3 w-32" />
+                      </Card>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-4 grid gap-4 lg:grid-cols-3">
                   <Card className="space-y-2">
@@ -1297,9 +1313,15 @@ export async function ProfileTemplate({
                             <div>{Math.round((game.playtime_2weeks ?? 0) / 60)}h</div>
                           </div>
                         ))
-                      ) : (
+                      ) : hasSteam ? (
                         <div className="text-xs text-[rgba(233,228,255,0.6)]">
                           No recent games in the last 2 weeks.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-5/6" />
+                          <Skeleton className="h-4 w-2/3" />
                         </div>
                       )}
                     </div>
@@ -1326,9 +1348,13 @@ export async function ProfileTemplate({
                           <ClientProgressRing value={48} label="Teacher" />
                           <ClientProgressRing value={71} label="Leader" />
                         </>
-                      ) : (
+                      ) : hasSteam ? (
                         <div className="col-span-3 text-xs text-[rgba(233,228,255,0.6)]">
                           N/A
+                        </div>
+                      ) : (
+                        <div className="col-span-3 flex items-center justify-center">
+                          <Skeleton className="h-16 w-40" />
                         </div>
                       )}
                     </div>
@@ -1337,43 +1363,65 @@ export async function ProfileTemplate({
               </TabsContent>
 
               <TabsContent value="leetify">
-              <div className="relative grid gap-4 lg:grid-cols-5">
-                <img
-                  src="/leetify-badge.png"
-                  alt="Leetify"
-                  className="absolute right-0 top-0 h-8 w-8 opacity-80"
-                />
+              <div className="relative grid gap-4 lg:grid-cols-5 pt-10 pr-10">
+                <div className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.85)] shadow-[0_0_18px_rgba(124,77,255,0.25)]">
+                  <img
+                    src="/leetify-badge.png"
+                    alt="Leetify"
+                    className="h-6 w-6 opacity-90"
+                  />
+                </div>
                 <Card className="space-y-2">
                   <CardDescription>Rating</CardDescription>
-                  <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>
-                    {hasLeetify ? formatNumber(leetifyRanks?.leetify ?? undefined, 2) : "N/A"}
-                  </div>
+                  {hasLeetify ? (
+                    <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>
+                      {formatNumber(leetifyRanks?.leetify ?? undefined, 2)}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-24" />
+                  )}
                 </Card>
                 <Card className="space-y-2">
                   <CardDescription>Premier</CardDescription>
-                  <div className="text-2xl font-semibold text-white">
-                    {hasLeetify && leetifyRanks?.premier != null
-                      ? leetifyRanks.premier.toLocaleString()
-                      : "N/A"}
-                  </div>
+                  {hasLeetify ? (
+                    <div className="text-2xl font-semibold text-white">
+                      {leetifyRanks?.premier != null
+                        ? leetifyRanks.premier.toLocaleString()
+                        : "N/A"}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-24" />
+                  )}
                 </Card>
                 <Card className="space-y-2">
                   <CardDescription>Win Rate</CardDescription>
-                  <div className={`text-2xl font-semibold ${valueColor(leetifyWinrate ?? undefined, 0.5)}`}>
-                    {hasLeetify ? formatPercent(leetifyWinrate, true) : "N/A"}
-                  </div>
+                  {hasLeetify ? (
+                    <div className={`text-2xl font-semibold ${valueColor(leetifyWinrate ?? undefined, 0.5)}`}>
+                      {formatPercent(leetifyWinrate, true)}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-24" />
+                  )}
                 </Card>
                 <Card className="space-y-2">
                   <CardDescription>HS%</CardDescription>
-                  <div className={`text-2xl font-semibold ${valueColor(leetifyStats?.accuracy_head ?? undefined, 20)}`}>
-                    {hasLeetify ? formatPercent(leetifyStats?.accuracy_head) : "N/A"}
-                  </div>
+                  {hasLeetify ? (
+                    <div className={`text-2xl font-semibold ${valueColor(leetifyStats?.accuracy_head ?? undefined, 20)}`}>
+                      {formatPercent(leetifyStats?.accuracy_head)}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-24" />
+                  )}
                 </Card>
                 <Card className="space-y-2">
                   <CardDescription>Matches</CardDescription>
-                  <div className="text-2xl font-semibold text-white">
-                    {hasLeetify ? leetifyMatches?.toLocaleString() ?? "N/A" : "N/A"}
-                  </div>
+                  {hasLeetify ? (
+                    <div className="text-2xl font-semibold text-white">
+                      {leetifyMatches?.toLocaleString() ?? "N/A"}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-24" />
+                  )}
                 </Card>
               </div>
               {errors?.leetify && (
@@ -1573,8 +1621,19 @@ export async function ProfileTemplate({
                     tournaments={faceitTournaments}
                   />
                 ) : (
-                  <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] p-4 text-xs text-[rgba(233,228,255,0.65)]">
-                    No FACEIT profile found. Link your FACEIT account to see stats.
+                  <div className="space-y-4">
+                    <div className="grid gap-4 lg:grid-cols-3">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <Card key={`faceit-skel-${index}`} className="space-y-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-8 w-32" />
+                          <Skeleton className="h-3 w-28" />
+                        </Card>
+                      ))}
+                    </div>
+                    <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] p-4 text-xs text-[rgba(233,228,255,0.65)]">
+                      No FACEIT profile found. No FACEIT account linked to see stats.
+                    </div>
                   </div>
                 )}
               </TabsContent>
