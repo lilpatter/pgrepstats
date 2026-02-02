@@ -25,6 +25,7 @@ import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
+import { ReviewPlayerModal } from "@/components/profile/ReviewPlayerModal";
 import { AutoFlagBadge } from "@/components/profile/AutoFlagBadge";
 import {
   ClientFaceitStats,
@@ -470,6 +471,33 @@ export async function ProfileTemplate({
       const bTime = new Date(String(b.finished_at ?? 0)).getTime();
       return bTime - aTime;
     });
+  const reviewMatches = combinedMatches.slice(0, 12).map((match) => {
+    const rankTypeRaw = match.rank_type ?? null;
+    const rankType =
+      typeof rankTypeRaw === "number"
+        ? rankTypeRaw
+        : Number.isNaN(Number(rankTypeRaw))
+        ? null
+        : Number(rankTypeRaw);
+    return {
+      id: match.id ? String(match.id) : null,
+      dataSource: match.data_source ? String(match.data_source) : null,
+      dataSourceMatchId: match.data_source_match_id
+        ? String(match.data_source_match_id)
+        : null,
+      mapName: match.map_name ? String(match.map_name) : null,
+      finishedAt:
+        typeof match.finished_at === "string"
+          ? match.finished_at
+          : match.finished_at
+          ? String(match.finished_at)
+          : null,
+      rankType,
+      score: Array.isArray(match.score)
+        ? (match.score as [number, number])
+        : null,
+    };
+  });
 
   const faceitNickname = faceitProfile?.nickname as string | undefined;
   const faceitCountry = faceitProfile?.country as string | undefined;
@@ -680,6 +708,8 @@ export async function ProfileTemplate({
   let autoFlaggedAt: string | null = null;
   let autoFlagReason: string | null = null;
   let lastRefreshedAtMs: number | null = null;
+  let positiveReviewCount: number | null = null;
+  let negativeReviewCount: number | null = null;
   if (steamId && steamProfile) {
     const supabase = createSupabaseServerClient();
     if (supabase) {
@@ -717,6 +747,26 @@ export async function ProfileTemplate({
       } else if (autoFlaggedAt || autoFlagReason) {
         updatePayload.auto_flagged_at = autoFlaggedAt;
         updatePayload.auto_flag_reason = autoFlagReason;
+      }
+
+      const [positiveReviews, negativeReviews] = await Promise.all([
+        supabase
+          .from("pgrep_reviews")
+          .select("id", { count: "exact", head: true })
+          .eq("target_steam_id", steamId)
+          .eq("review_type", "positive"),
+        supabase
+          .from("pgrep_reviews")
+          .select("id", { count: "exact", head: true })
+          .eq("target_steam_id", steamId)
+          .eq("review_type", "negative"),
+      ]);
+
+      if (!positiveReviews.error) {
+        positiveReviewCount = positiveReviews.count ?? 0;
+      }
+      if (!negativeReviews.error) {
+        negativeReviewCount = negativeReviews.count ?? 0;
       }
 
       await supabase.from("pgrep_profiles").upsert(updatePayload, {
@@ -997,22 +1047,26 @@ export async function ProfileTemplate({
             initialRefreshedAt={lastRefreshedAtMs ?? null}
             steamId={steamId}
           />
+          <div className="space-y-2">
+            <ReportOverwatchModal
+              steamId={steamId}
+              playerName={displayName}
+              disabled={Boolean(overwatchBanned)}
+              disabledReason="Player is already overwatch banned."
+              viewerSteamId={viewerSteamId ?? null}
+            />
+            <ReviewPlayerModal
+              steamId={steamId}
+              playerName={displayName}
+              viewerSteamId={viewerSteamId ?? null}
+              matches={reviewMatches}
+              positiveCount={positiveReviewCount}
+              negativeCount={negativeReviewCount}
+            />
+          </div>
         </Card>
 
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div />
-            <div className="flex items-center gap-3">
-              <ReportOverwatchModal
-                steamId={steamId}
-                playerName={displayName}
-                disabled={Boolean(overwatchBanned)}
-                disabledReason="Player is already overwatch banned."
-                viewerSteamId={viewerSteamId ?? null}
-              />
-            </div>
-          </div>
-
           <Tabs defaultValue={defaultTab}>
             <TabsList className="w-full justify-between">
               <TabsTrigger value="reputation">
