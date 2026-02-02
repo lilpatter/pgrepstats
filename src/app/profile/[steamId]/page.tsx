@@ -360,12 +360,12 @@ export default async function ProfileBySteamId({
     lastRefreshedAtMs !== null &&
     Date.now() - lastRefreshedAtMs < CACHE_MAX_AGE_MINUTES * 60 * 1000;
 
-  const shouldFetchSteam = !cachedSteam;
+  const shouldFetchSteam = true;
   const shouldFetchLeetify = !cachedLeetify;
   const shouldFetchFaceit = !cachedFaceit;
 
   const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
-    shouldFetchSteam ? fetchSteamProfile(steamId) : Promise.resolve(cachedSteam),
+    fetchSteamProfile(steamId),
     shouldFetchLeetify ? fetchLeetifyProfile(steamId) : Promise.resolve(cachedLeetify),
     shouldFetchFaceit ? fetchFaceitProfile(steamId) : Promise.resolve(cachedFaceit),
   ]);
@@ -416,26 +416,27 @@ export default async function ProfileBySteamId({
     },
   });
 
-  const didFetch = shouldFetchSteam || shouldFetchLeetify || shouldFetchFaceit;
+  const didFetchLeetify = shouldFetchLeetify;
+  const didFetchFaceit = shouldFetchFaceit;
+  const didFetch = didFetchLeetify || didFetchFaceit || shouldFetchSteam;
   if (supabase && didFetch) {
-    const nowIso = new Date().toISOString();
-    await supabase.from("pgrep_profiles").upsert(
-      {
-        steam_id: steamId,
-        steam_snapshot: steamResult.status === "fulfilled" ? steamResult.value : null,
-        leetify_snapshot:
-          leetifyResult.status === "fulfilled" ? leetifyResult.value : null,
-        faceit_snapshot:
-          faceitResult.status === "fulfilled" ? faceitResult.value : null,
-        last_refreshed_at: nowIso,
-      },
-      { onConflict: "steam_id" }
-    );
+    const updatePayload: Record<string, unknown> = {
+      steam_id: steamId,
+      steam_snapshot: steamResult.status === "fulfilled" ? steamResult.value : null,
+      leetify_snapshot:
+        leetifyResult.status === "fulfilled" ? leetifyResult.value : cachedLeetify,
+      faceit_snapshot:
+        faceitResult.status === "fulfilled" ? faceitResult.value : cachedFaceit,
+      last_refreshed_at: cachedProfile?.last_refreshed_at ?? null,
+    };
+    await supabase.from("pgrep_profiles").upsert(updatePayload, {
+      onConflict: "steam_id",
+    });
   }
 
-  if (supabase && !didFetch && !cacheFresh && hasAllCache) {
+  if (supabase && !cacheFresh && hasAllCache) {
     try {
-      await enqueueRefreshJob(supabase, steamId, session?.steamId ?? null);
+      await enqueueRefreshJob(supabase, steamId, session?.steamId ?? null, "full");
     } catch {
       // Ignore enqueue errors; cached data can still render.
     }

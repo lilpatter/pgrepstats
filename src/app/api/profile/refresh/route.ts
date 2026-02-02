@@ -12,6 +12,7 @@ import { z } from "zod";
 
 const payloadSchema = z.object({
   steamId: z.string().min(1),
+  mode: z.enum(["full", "partial"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -75,13 +76,19 @@ export async function POST(request: Request) {
   const { job, created } = await enqueueRefreshJob(
     supabase,
     payload.steamId,
-    session.steamId
+    session.steamId,
+    payload.mode ?? "full"
   );
 
   if (!created) {
     if (job.status === "queued") {
       try {
-        const result = await runRefreshJob(supabase, job.id, payload.steamId);
+        const result = await runRefreshJob(
+          supabase,
+          job.id,
+          payload.steamId,
+          payload.mode ?? "full"
+        );
         return NextResponse.json(
           {
             ok: true,
@@ -111,7 +118,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await runRefreshJob(supabase, job.id, payload.steamId);
+    const result = await runRefreshJob(
+      supabase,
+      job.id,
+      payload.steamId,
+      payload.mode ?? "full"
+    );
     return NextResponse.json(
       { ok: true, status: "completed", jobId: job.id, refreshedAt: result.refreshedAt },
       { status: 200 }

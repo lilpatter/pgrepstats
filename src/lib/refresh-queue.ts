@@ -15,6 +15,7 @@ type RefreshJobRow = {
   id: string;
   steam_id: string;
   requester_steam_id?: string | null;
+  mode?: "full" | "partial" | null;
   status: RefreshJobStatus;
   attempt_count?: number | null;
   max_attempts?: number | null;
@@ -48,7 +49,8 @@ function computeBackoffSeconds(attemptCount: number) {
 export async function enqueueRefreshJob(
   supabase: any,
   steamId: string,
-  requesterSteamId: string | null
+  requesterSteamId: string | null,
+  mode: "full" | "partial" = "full"
 ) {
   const { data: existing } = await supabase
     .from("refresh_queue")
@@ -72,6 +74,7 @@ export async function enqueueRefreshJob(
       steam_id: steamId,
       requester_steam_id: requesterSteamId,
       status: "queued",
+      mode,
     })
     .select("id, status")
     .single();
@@ -86,15 +89,29 @@ export async function enqueueRefreshJob(
 export async function runRefreshJob(
   supabase: any,
   jobId: string,
-  steamId: string
+  steamId: string,
+  mode: "full" | "partial" = "full"
 ) {
   const { data: jobRow } = await supabase
     .from("refresh_queue")
     .select(
-      "id, attempt_count, max_attempts, status, created_at, started_at, updated_at"
+      "id, attempt_count, max_attempts, status, created_at, started_at, updated_at, mode"
     )
     .eq("id", jobId)
     .maybeSingle();
+
+  const { data: existingProfile } = await supabase
+    .from("pgrep_profiles")
+    .select("steam_snapshot, leetify_snapshot, faceit_snapshot, last_refreshed_at")
+    .eq("steam_id", steamId)
+    .maybeSingle();
+
+  const effectiveMode = (jobRow?.mode ?? mode) as "full" | "partial";
+  const needsSteam = effectiveMode === "full" ? true : !existingProfile?.steam_snapshot;
+  const needsLeetify =
+    effectiveMode === "full" ? true : !existingProfile?.leetify_snapshot;
+  const needsFaceit =
+    effectiveMode === "full" ? true : !existingProfile?.faceit_snapshot;
 
   const nowIso = new Date().toISOString();
   await supabase
@@ -103,26 +120,37 @@ export async function runRefreshJob(
     .eq("id", jobId);
 
   const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
-    fetchSteamProfile(steamId),
-    fetchLeetifyProfile(steamId),
-    fetchFaceitProfile(steamId),
+    needsSteam ? fetchSteamProfile(steamId) : Promise.resolve(null),
+    needsLeetify ? fetchLeetifyProfile(steamId) : Promise.resolve(null),
+    needsFaceit ? fetchFaceitProfile(steamId) : Promise.resolve(null),
   ]);
 
   const steamSnapshot =
-    steamResult.status === "fulfilled" ? steamResult.value : null;
+    steamResult.status === "fulfilled"
+      ? steamResult.value
+      : existingProfile?.steam_snapshot ?? null;
   const leetifySnapshot =
-    leetifyResult.status === "fulfilled" ? leetifyResult.value : null;
+    leetifyResult.status === "fulfilled"
+      ? leetifyResult.value
+      : existingProfile?.leetify_snapshot ?? null;
   const faceitSnapshot =
-    faceitResult.status === "fulfilled" ? faceitResult.value : null;
+    faceitResult.status === "fulfilled"
+      ? faceitResult.value
+      : existingProfile?.faceit_snapshot ?? null;
 
   const nowDoneIso = new Date().toISOString();
+  const didFetch = needsSteam || needsLeetify || needsFaceit;
+  const refreshedAt =
+    didFetch || !existingProfile?.last_refreshed_at
+      ? nowDoneIso
+      : existingProfile.last_refreshed_at;
   const { error: upsertError } = await supabase.from("pgrep_profiles").upsert(
     {
       steam_id: steamId,
       steam_snapshot: steamSnapshot,
       leetify_snapshot: leetifySnapshot,
       faceit_snapshot: faceitSnapshot,
-      last_refreshed_at: nowDoneIso,
+      last_refreshed_at: refreshedAt,
     },
     { onConflict: "steam_id" }
   );
@@ -169,7 +197,7 @@ export async function runRefreshJob(
     })
     .eq("id", jobId);
 
-  return { refreshedAt: nowDoneIso };
+  return { refreshedAt };
 }
 
 export async function claimNextQueuedJob(
@@ -178,7 +206,9 @@ export async function claimNextQueuedJob(
   const nowIso = new Date().toISOString();
   const { data } = await supabase
     .from("refresh_queue")
-    .select("id, steam_id, status, next_attempt_at, attempt_count, max_attempts")
+    .select(
+      "id, steam_id, status, next_attempt_at, attempt_count, max_attempts, mode"
+    )
     .eq("status", "queued")
     .or(`next_attempt_at.is.null,next_attempt_at.lte.${nowIso}`)
     .order("created_at", { ascending: true })
@@ -195,7 +225,7 @@ export async function claimNextQueuedJob(
 
   if (error) return null;
 
-  return { id: data.id, steam_id: data.steam_id };
+  return { id: data.id, steam_id: data.steam_id, mode: data.mode ?? "full" };
 }
 
 export async function cleanupStaleJobs(supabase: any) {

@@ -24,6 +24,7 @@ export function ProfileActions({
     "idle" | "refreshing" | "queued"
   >("idle");
   const [queuedJobId, setQueuedJobId] = useState<string | null>(null);
+  const [queuedEta, setQueuedEta] = useState<number | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState<number | null>(null);
   const router = useRouter();
 
@@ -90,6 +91,7 @@ export function ProfileActions({
       if (payload?.status === "queued" || payload?.status === "processing") {
         setRefreshState("queued");
         setQueuedJobId(payload?.jobId ?? null);
+        setQueuedEta(null);
         triggerToast("Refresh queued. It will update shortly.");
         return;
       }
@@ -99,11 +101,13 @@ export function ProfileActions({
         setRelativeLabel("Just now");
         setRefreshState("idle");
         setQueuedJobId(null);
+        setQueuedEta(null);
         router.refresh();
         return;
       }
       setRefreshState("queued");
       setQueuedJobId(payload?.jobId ?? null);
+      setQueuedEta(null);
       triggerToast("Refresh queued. It will update shortly.");
     } catch {
       setRefreshState("idle");
@@ -157,22 +161,32 @@ export function ProfileActions({
         if (!res.ok) return;
         const payload = (await res.json().catch(() => null)) as
           | {
-              job?: { id?: string; status?: string; finished_at?: string | null };
+              job?: {
+                id?: string;
+                status?: string;
+                finished_at?: string | null;
+                eta_seconds?: number | null;
+              };
               lastRefreshedAt?: string | null;
             }
           | null;
         const jobStatus = payload?.job?.status ?? null;
         const jobId = payload?.job?.id ?? null;
+        const etaSeconds = payload?.job?.eta_seconds ?? null;
         if (queuedJobId && jobId && queuedJobId !== jobId) return;
         if (jobStatus === "completed" || jobStatus === "failed") {
           setRefreshState("idle");
           setQueuedJobId(null);
+          setQueuedEta(null);
           if (payload?.lastRefreshedAt) {
             const refreshedAt = new Date(payload.lastRefreshedAt).getTime();
             setLastRefreshedAt(refreshedAt);
             setRelativeLabel("Just now");
             router.refresh();
           }
+        }
+        if (jobStatus === "queued" && etaSeconds && etaSeconds > 0) {
+          setQueuedEta(Math.round(etaSeconds));
         }
       } catch {
         // Ignore polling errors.
@@ -206,7 +220,7 @@ export function ProfileActions({
       </button>
       {refreshState === "queued" ? (
         <div className="text-[10px] uppercase tracking-[0.2em] text-[#9b6cff]">
-          Refresh queued
+          Refresh queued{queuedEta ? ` • ~${queuedEta}s` : ""}
         </div>
       ) : null}
       {cooldownSeconds ? (

@@ -38,6 +38,19 @@ export async function GET(request: Request) {
     .limit(1)
     .maybeSingle();
 
+  let etaSeconds: number | null = null;
+  if (job?.status === "queued" && job.created_at) {
+    const avgSeconds = Number(process.env.REFRESH_AVG_SECONDS ?? "30");
+    const { count: aheadCount } = await supabase
+      .from("refresh_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "queued")
+      .lte("created_at", job.created_at);
+    if (aheadCount && avgSeconds > 0) {
+      etaSeconds = Math.max(0, aheadCount - 1) * avgSeconds;
+    }
+  }
+
   const { data: profile } = await supabase
     .from("pgrep_profiles")
     .select("last_refreshed_at")
@@ -45,7 +58,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   return NextResponse.json({
-    job: job ?? null,
+    job: job ? { ...job, eta_seconds: etaSeconds } : null,
     lastRefreshedAt: profile?.last_refreshed_at ?? null,
   });
 }

@@ -31,7 +31,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await runRefreshJob(supabase, job.id, job.steam_id);
+    const result = await runRefreshJob(
+      supabase,
+      job.id,
+      job.steam_id,
+      job.mode
+    );
     return NextResponse.json({
       ok: true,
       jobId: job.id,
