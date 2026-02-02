@@ -41,6 +41,7 @@ type ReviewPlayerModalProps = {
   matches?: ReviewMatch[];
   positiveCount?: number | null;
   negativeCount?: number | null;
+  hasReviewed?: boolean;
 };
 
 function formatRelativeMatchTime(value?: string | null) {
@@ -86,6 +87,7 @@ export function ReviewPlayerModal({
   matches = [],
   positiveCount,
   negativeCount,
+  hasReviewed = false,
 }: ReviewPlayerModalProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -101,8 +103,11 @@ export function ReviewPlayerModal({
   }, []);
 
   const isSelfReview = Boolean(viewerSteamId && steamId && viewerSteamId === steamId);
-  const canReview = Boolean(viewerSteamId) && Boolean(steamId) && !isSelfReview;
-  const totalReviews = (positiveCount ?? 0) + (negativeCount ?? 0);
+  const canReview =
+    Boolean(viewerSteamId) && Boolean(steamId) && !isSelfReview && !hasReviewed;
+  const netReviews = (positiveCount ?? 0) - (negativeCount ?? 0);
+  const reviewDisplay =
+    netReviews > 0 ? `+${netReviews}` : netReviews < 0 ? `${netReviews}` : "0";
 
   const close = () => {
     if (submitting) return;
@@ -204,12 +209,13 @@ export function ReviewPlayerModal({
                 : "bg-[rgba(15,12,30,0.7)] text-[rgba(233,228,255,0.4)]"
             }`}
             disabled={!canReview}
+            title={hasReviewed ? "You have already reviewed this player." : undefined}
           >
             <Plus className="h-3.5 w-3.5" />
             +REP
           </button>
           <div className="rounded-full bg-[rgba(233,228,255,0.08)] px-3 py-1 text-sm font-semibold text-white">
-            {totalReviews}
+            {reviewDisplay}
           </div>
           <button
             type="button"
@@ -220,13 +226,14 @@ export function ReviewPlayerModal({
                 : "bg-[rgba(15,12,30,0.7)] text-[rgba(233,228,255,0.4)]"
             }`}
             disabled={!canReview}
+            title={hasReviewed ? "You have already reviewed this player." : undefined}
           >
             <Minus className="h-3.5 w-3.5" />
             -REP
           </button>
         </div>
         <div className="mt-2 text-[rgba(233,228,255,0.5)]">
-          {totalReviews === 0 ? "Not enough reviews yet" : "Community reviews"}
+          {netReviews === 0 ? "Not enough reviews yet" : "Community reviews"}
         </div>
         {!viewerSteamId ? (
           <div className="mt-2 text-[rgba(233,228,255,0.45)]">
@@ -235,6 +242,10 @@ export function ReviewPlayerModal({
         ) : isSelfReview ? (
           <div className="mt-2 text-[rgba(233,228,255,0.45)]">
             You cannot review yourself.
+          </div>
+        ) : hasReviewed ? (
+          <div className="mt-2 text-[rgba(233,228,255,0.45)]">
+            You already reviewed this player.
           </div>
         ) : null}
       </div>

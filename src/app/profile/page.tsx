@@ -783,6 +783,7 @@ export async function ProfileTemplate({
   let lastRefreshedAtMs: number | null = null;
   let positiveReviewCount: number | null = null;
   let negativeReviewCount: number | null = null;
+  let hasReviewedByViewer = false;
   if (steamId && steamProfile) {
     const supabase = createSupabaseServerClient();
     if (supabase) {
@@ -840,6 +841,16 @@ export async function ProfileTemplate({
       }
       if (!negativeReviews.error) {
         negativeReviewCount = negativeReviews.count ?? 0;
+      }
+
+      if (viewerSteamId) {
+        const { data: existingReview } = await supabase
+          .from("pgrep_reviews")
+          .select("id")
+          .eq("target_steam_id", steamId)
+          .eq("reviewer_steam_id", viewerSteamId)
+          .maybeSingle();
+        hasReviewedByViewer = Boolean(existingReview?.id);
       }
 
       await supabase.from("pgrep_profiles").upsert(updatePayload, {
@@ -1135,6 +1146,7 @@ export async function ProfileTemplate({
               matches={reviewMatches}
               positiveCount={positiveReviewCount}
               negativeCount={negativeReviewCount}
+              hasReviewed={hasReviewedByViewer}
             />
           </div>
         </Card>
