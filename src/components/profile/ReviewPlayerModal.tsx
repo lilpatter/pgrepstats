@@ -7,13 +7,21 @@ import { Button } from "@/components/ui/button";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 import { getCsrfToken } from "@/lib/csrf-client";
 
-const REVIEW_REASONS = [
+const POSITIVE_REASONS = [
   "Great Comms",
   "Friendly / Positive",
   "Good Teammate",
   "Consistent Player",
   "Clutch Player",
   "Helpful / Mentoring",
+] as const;
+const NEGATIVE_REASONS = [
+  "Toxic / Negative Attitude",
+  "Poor Communication",
+  "Baiting / Not Trading",
+  "AFK / Inactive",
+  "Griefing / Trolling",
+  "Bottom Fragging / No Impact",
 ] as const;
 
 type ReviewMatch = {
@@ -166,6 +174,9 @@ export function ReviewPlayerModal({
     }
   };
 
+  const reasonOptions = reviewType === "negative" ? NEGATIVE_REASONS : POSITIVE_REASONS;
+  const promptLabel =
+    reviewType === "negative" ? "What went wrong?" : "What was good about this player?";
   const matchCards = useMemo(
     () =>
       matches.map((match) => {
@@ -313,7 +324,10 @@ export function ReviewPlayerModal({
                       <div className="mt-2 flex gap-3">
                         <button
                           type="button"
-                          onClick={() => setReviewType("positive")}
+                          onClick={() => {
+                            setReviewType("positive");
+                            setSelectedReasons([]);
+                          }}
                           className={`flex-1 rounded-2xl border px-4 py-2 text-sm font-semibold ${
                             reviewType === "positive"
                               ? "border-[#47f59d] bg-[#0f2b21] text-[#47f59d]"
@@ -324,7 +338,10 @@ export function ReviewPlayerModal({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setReviewType("negative")}
+                          onClick={() => {
+                            setReviewType("negative");
+                            setSelectedReasons([]);
+                          }}
                           className={`flex-1 rounded-2xl border px-4 py-2 text-sm font-semibold ${
                             reviewType === "negative"
                               ? "border-[#ff5a7a] bg-[#2b1418] text-[#ff5a7a]"
@@ -338,10 +355,10 @@ export function ReviewPlayerModal({
 
                     <div>
                       <div className="text-sm text-[rgba(233,228,255,0.6)]">
-                        What was good about this player? ({selectedReasons.length}/3)
+                        {promptLabel} ({selectedReasons.length}/3)
                       </div>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        {REVIEW_REASONS.map((reason) => {
+                        {reasonOptions.map((reason) => {
                           const checked = selectedReasons.includes(reason);
                           return (
                             <button

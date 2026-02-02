@@ -337,6 +337,73 @@ function getLifetimeValue(
   return "N/A";
 }
 
+async function filterMatchesForReview(
+  matches: Array<Record<string, unknown>>,
+  viewerSteamId: string | null | undefined,
+  targetSteamId: string | null | undefined
+) {
+  if (!viewerSteamId || !targetSteamId) return [];
+  const apiKey = process.env.LEETIFY_API_KEY;
+  if (!apiKey) return [];
+  const rawBaseUrl =
+    process.env.LEETIFY_BASE_URL ?? "https://api-public.cs-prod.leetify.com";
+  const baseUrl = rawBaseUrl.includes("api.leetify.com")
+    ? "https://api-public.cs-prod.leetify.com"
+    : rawBaseUrl;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+    _leetify_key: apiKey,
+  };
+
+  const candidates = matches
+    .map((match) => {
+      const dataSource = match.data_source ? String(match.data_source) : null;
+      const dataSourceMatchId = match.data_source_match_id
+        ? String(match.data_source_match_id)
+        : null;
+      const matchId = match.id ? String(match.id) : null;
+      if (dataSource && dataSourceMatchId) {
+        const url =
+          dataSource === "leetify"
+            ? `${baseUrl}/v2/matches/${dataSourceMatchId}`
+            : `${baseUrl}/v2/matches/${dataSource}/${dataSourceMatchId}`;
+        return { match, url };
+      }
+      if (matchId) {
+        return { match, url: `${baseUrl}/v2/matches/${matchId}` };
+      }
+      return null;
+    })
+    .filter((item): item is { match: Record<string, unknown>; url: string } =>
+      Boolean(item)
+    );
+
+  const results = await Promise.allSettled(
+    candidates.map(async ({ match, url }) => {
+      const res = await fetch(url, { headers, next: { revalidate: 60 } });
+      if (!res.ok) return null;
+      const payload = (await res.json()) as {
+        stats?: Array<{ steam64_id?: string | null }>;
+      };
+      const ids = new Set(
+        (payload.stats ?? [])
+          .map((stat) => stat.steam64_id)
+          .filter((id): id is string => Boolean(id))
+      );
+      if (ids.has(viewerSteamId) && ids.has(targetSteamId)) {
+        return match;
+      }
+      return null;
+    })
+  );
+
+  return results
+    .map((result) => (result.status === "fulfilled" ? result.value : null))
+    .filter((match): match is Record<string, unknown> => Boolean(match));
+}
+
 export async function ProfileTemplate({
   steamId,
   steamProfile,
@@ -471,7 +538,13 @@ export async function ProfileTemplate({
       const bTime = new Date(String(b.finished_at ?? 0)).getTime();
       return bTime - aTime;
     });
-  const reviewMatches = combinedMatches.slice(0, 12).map((match) => {
+  const reviewCandidates = combinedMatches.slice(0, 12);
+  const reviewSourceMatches = await filterMatchesForReview(
+    reviewCandidates,
+    viewerSteamId ?? null,
+    steamId ?? null
+  );
+  const reviewMatches = reviewSourceMatches.map((match) => {
     const rankTypeRaw = match.rank_type ?? null;
     const rankType =
       typeof rankTypeRaw === "number"
