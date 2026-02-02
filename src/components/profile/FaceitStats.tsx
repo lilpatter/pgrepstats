@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart3, Shield, Swords, Trophy, Users } from "lucide-react";
 
 type FaceitStatsResponse = {
   lifetime?: Record<string, unknown>;
@@ -319,11 +320,36 @@ export function FaceitStats({
     <div className="space-y-6">
       <Tabs defaultValue="stats">
         <TabsList className="w-full justify-start gap-2">
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="matches">Matches</TabsTrigger>
-          <TabsTrigger value="hubs">Hubs</TabsTrigger>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
+          <TabsTrigger value="stats">
+            <span className="inline-flex items-center gap-2">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Stats
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="matches">
+            <span className="inline-flex items-center gap-2">
+              <Swords className="h-3.5 w-3.5" />
+              Matches
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="hubs">
+            <span className="inline-flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5" />
+              Hubs
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="teams">
+            <span className="inline-flex items-center gap-2">
+              <Users className="h-3.5 w-3.5" />
+              Teams
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="tournaments">
+            <span className="inline-flex items-center gap-2">
+              <Trophy className="h-3.5 w-3.5" />
+              Tournaments
+            </span>
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] p-4">

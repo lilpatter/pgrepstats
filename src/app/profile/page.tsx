@@ -603,6 +603,21 @@ export async function ProfileTemplate({
       stat.percent > 0 ? Math.round(stat.percent * 10) / 10 : null;
     return { ...stat, ...statusInfo, impact, rawDelta, severity };
   });
+  const formatSectionDelta = (value: number | null) => {
+    const safe = value ?? 0;
+    const rounded = Math.round(safe * 10) / 10;
+    const normalized = Object.is(rounded, -0) ? 0 : rounded;
+    const sign = normalized > 0 ? "+" : normalized < 0 ? "" : "+";
+    return `${sign}${normalized.toFixed(1)}%`;
+  };
+  const statsSectionDelta = (() => {
+    const values = statsAnalysis
+      .map((stat) => stat.rawDelta)
+      .filter((value): value is number => value !== null);
+    if (!values.length) return 0;
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return total / values.length;
+  })();
   const lastFaceitMatch = (faceitHistory?.items?.[0] as
     | { finished_at?: string | number; started_at?: string | number }
     | undefined) ?? null;
@@ -632,6 +647,9 @@ export async function ProfileTemplate({
     (sum, stat) => sum + (stat.penalty ?? 0),
     0
   );
+  const anomaliesSectionDelta = -(rankMismatchPenalty + inactivityPenalty);
+  const accountReputationDelta =
+    (accountAgeBonus ?? 0) + (cs2HoursBonus ?? 0) + (steamLevelBonus ?? 0);
   const hasReputationData = Boolean(leetifyProfile);
   const trustScore = hasReputationData
     ? Math.max(
@@ -786,7 +804,7 @@ export async function ProfileTemplate({
                         className="h-4 w-6 rounded-sm border border-[rgba(155,108,255,0.35)]"
                         loading="lazy"
                       />
-                    </span>
+                </span>
                   ) : (
                     <span className="text-xs text-[rgba(233,228,255,0.5)]">N/A</span>
                   );
@@ -813,7 +831,7 @@ export async function ProfileTemplate({
             />
           </div>
 
-          <div className="flex justify-center gap-2">
+              <div className="flex justify-center gap-2">
             {steamId === "76561197963549247" ? (
               <>
                 <div className="group relative">
@@ -857,8 +875,8 @@ export async function ProfileTemplate({
           {autoFlaggedAt && autoFlagReason ? (
             <div className="flex justify-center">
               <AutoFlagBadge flaggedAt={autoFlaggedAt} reason={autoFlagReason} />
-            </div>
-          ) : null}
+              </div>
+            ) : null}
 
           <div className="flex items-center justify-center gap-2">
             {hasSteam ? (
@@ -1007,14 +1025,14 @@ export async function ProfileTemplate({
               <TabsTrigger value="steam" disabled={steamPrivate}>
                 <span className="inline-flex items-center gap-2">
                   <Target className="h-3.5 w-3.5" />
-                  Steam
+                Steam
                 </span>
               </TabsTrigger>
               {/* Disable when Leetify is private/unavailable; add privacy prompt later. */}
               <TabsTrigger value="leetify" disabled={leetifyPrivate}>
                 <span className="inline-flex items-center gap-2">
                   <BarChart3 className="h-3.5 w-3.5" />
-                  Leetify
+                Leetify
                 </span>
               </TabsTrigger>
               <TabsTrigger value="faceit">
@@ -1090,10 +1108,10 @@ export async function ProfileTemplate({
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-[rgba(233,228,255,0.6)]">
                           <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5">
-                            Leetify + FACEIT
-                          </span>
+                          Leetify + FACEIT
+                        </span>
                           <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5">
-                            +0.0%
+                            {formatSectionDelta(statsSectionDelta)}
                           </span>
                         </div>
                       </div>
@@ -1186,7 +1204,7 @@ export async function ProfileTemplate({
                         Anomalies Detected
                       </div>
                       <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
-                        +0.0%
+                        {formatSectionDelta(anomaliesSectionDelta)}
                       </span>
                     </div>
                     <div className="grid gap-3 lg:grid-cols-2">
@@ -1256,7 +1274,7 @@ export async function ProfileTemplate({
                         Account Reputation
                       </div>
                       <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
-                        +0.0%
+                        {formatSectionDelta(accountReputationDelta)}
                       </span>
                     </div>
                     <div className="grid gap-3 lg:grid-cols-5">
@@ -1324,59 +1342,59 @@ export async function ProfileTemplate({
 
                 {hasSteam ? (
                   <div className="mt-4 grid gap-4 lg:grid-cols-4">
-                    <Card className="space-y-2">
+                  <Card className="space-y-2">
                       <CardDescription className="flex items-center gap-2">
                         <CircleDot className="h-3.5 w-3.5 text-[#9b6cff]" />
                         Status
                       </CardDescription>
-                      <div className="text-2xl font-semibold text-white">
-                        {personaLabel}
-                      </div>
-                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                        Last online: {lastOnline}
-                      </div>
-                    </Card>
-                    <Card className="space-y-2">
+                    <div className="text-2xl font-semibold text-white">
+                      {personaLabel}
+                    </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                      Last online: {lastOnline}
+                    </div>
+                  </Card>
+                  <Card className="space-y-2">
                       <CardDescription className="flex items-center gap-2">
                         <Users className="h-3.5 w-3.5 text-[#9b6cff]" />
                         Friends
                       </CardDescription>
-                      <div className="text-2xl font-semibold text-white">
-                        {steamFriendsCount ?? "N/A"}
-                      </div>
-                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                        Public profiles only
-                      </div>
-                    </Card>
-                    <Card className="space-y-2">
+                    <div className="text-2xl font-semibold text-white">
+                      {steamFriendsCount ?? "N/A"}
+                    </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                      Public profiles only
+                    </div>
+                  </Card>
+                  <Card className="space-y-2">
                       <CardDescription className="flex items-center gap-2">
                         <Clock className="h-3.5 w-3.5 text-[#9b6cff]" />
                         Recent Playtime
                       </CardDescription>
-                      <div className="text-2xl font-semibold text-white">
-                        {steamRecentGames?.length
-                          ? `${Math.round(
-                              (steamRecentGames[0]?.playtime_2weeks ?? 0) / 60
-                            )}h`
-                          : "N/A"}
-                      </div>
-                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                        Last 2 weeks
-                      </div>
-                    </Card>
-                    <Card className="space-y-2">
+                    <div className="text-2xl font-semibold text-white">
+                      {steamRecentGames?.length
+                        ? `${Math.round(
+                            (steamRecentGames[0]?.playtime_2weeks ?? 0) / 60
+                          )}h`
+                        : "N/A"}
+                    </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                      Last 2 weeks
+                    </div>
+                  </Card>
+                  <Card className="space-y-2">
                       <CardDescription className="flex items-center gap-2">
                         <Gauge className="h-3.5 w-3.5 text-[#9b6cff]" />
                         Steam Level
                       </CardDescription>
-                      <div className="text-2xl font-semibold text-white">
-                        {steamLevel ?? "N/A"}
-                      </div>
-                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                        Current level
-                      </div>
-                    </Card>
-                  </div>
+                    <div className="text-2xl font-semibold text-white">
+                      {steamLevel ?? "N/A"}
+                    </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                      Current level
+                    </div>
+                  </Card>
+                </div>
                 ) : (
                   <div className="mt-4 grid gap-4 lg:grid-cols-4">
                     {Array.from({ length: 4 }).map((_, index) => (
@@ -1487,22 +1505,15 @@ export async function ProfileTemplate({
 
               <TabsContent value="leetify">
               <div className="relative grid gap-4 lg:grid-cols-5 pt-12 pr-12">
-                <div className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.85)] p-1 shadow-[0_0_18px_rgba(124,77,255,0.25)]">
-                  <img
-                    src="/leetify-badge.png"
-                    alt="Leetify"
-                    className="h-full w-full object-contain opacity-95"
-                  />
-                </div>
                 <Card className="space-y-2">
                   <CardDescription className="flex items-center gap-2">
                     <BarChart3 className="h-3.5 w-3.5 text-[#9b6cff]" />
                     Rating
                   </CardDescription>
                   {hasLeetify ? (
-                    <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>
+                  <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>
                       {formatNumber(leetifyRanks?.leetify ?? undefined, 2)}
-                    </div>
+                  </div>
                   ) : (
                     <Skeleton className="h-8 w-24" />
                   )}
@@ -1513,11 +1524,11 @@ export async function ProfileTemplate({
                     Premier
                   </CardDescription>
                   {hasLeetify ? (
-                    <div className="text-2xl font-semibold text-white">
+                  <div className="text-2xl font-semibold text-white">
                       {leetifyRanks?.premier != null
-                        ? leetifyRanks.premier.toLocaleString()
-                        : "N/A"}
-                    </div>
+                      ? leetifyRanks.premier.toLocaleString()
+                      : "N/A"}
+                  </div>
                   ) : (
                     <Skeleton className="h-8 w-24" />
                   )}
@@ -1528,9 +1539,9 @@ export async function ProfileTemplate({
                     Win Rate
                   </CardDescription>
                   {hasLeetify ? (
-                    <div className={`text-2xl font-semibold ${valueColor(leetifyWinrate ?? undefined, 0.5)}`}>
+                  <div className={`text-2xl font-semibold ${valueColor(leetifyWinrate ?? undefined, 0.5)}`}>
                       {formatPercent(leetifyWinrate, true)}
-                    </div>
+                  </div>
                   ) : (
                     <Skeleton className="h-8 w-24" />
                   )}
@@ -1541,9 +1552,9 @@ export async function ProfileTemplate({
                     HS%
                   </CardDescription>
                   {hasLeetify ? (
-                    <div className={`text-2xl font-semibold ${valueColor(leetifyStats?.accuracy_head ?? undefined, 20)}`}>
+                  <div className={`text-2xl font-semibold ${valueColor(leetifyStats?.accuracy_head ?? undefined, 20)}`}>
                       {formatPercent(leetifyStats?.accuracy_head)}
-                    </div>
+                  </div>
                   ) : (
                     <Skeleton className="h-8 w-24" />
                   )}
@@ -1554,9 +1565,9 @@ export async function ProfileTemplate({
                     Matches
                   </CardDescription>
                   {hasLeetify ? (
-                    <div className="text-2xl font-semibold text-white">
+                  <div className="text-2xl font-semibold text-white">
                       {leetifyMatches?.toLocaleString() ?? "N/A"}
-                    </div>
+                  </div>
                   ) : (
                     <Skeleton className="h-8 w-24" />
                   )}
@@ -1754,13 +1765,11 @@ export async function ProfileTemplate({
                       match review before conclusions.
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(12,9,26,0.85)] p-2">
-                    <img
-                      src="/leetify-badge.png"
-                      alt="Leetify"
-                      className="h-8 w-8 object-contain opacity-95"
-                    />
-                  </div>
+                  <img
+                    src="/leetify-badge.png"
+                    alt="Leetify"
+                    className="h-10 w-10 object-contain opacity-95"
+                  />
                 </div>
               </div>
 
@@ -1769,15 +1778,15 @@ export async function ProfileTemplate({
               <TabsContent value="faceit">
                 {faceitProfileData ? (
                   <ClientFaceitStats
-                    faceitProfile={faceitProfileData}
-                    statsCs2={faceitStatsCs2}
-                    statsCsgo={faceitStatsCsgo}
-                    historyCs2={faceitHistoryCs2}
-                    historyCsgo={faceitHistoryCsgo}
-                    hubs={faceitHubs}
-                    teams={faceitTeams}
-                    tournaments={faceitTournaments}
-                  />
+                  faceitProfile={faceitProfileData}
+                  statsCs2={faceitStatsCs2}
+                  statsCsgo={faceitStatsCsgo}
+                  historyCs2={faceitHistoryCs2}
+                  historyCsgo={faceitHistoryCsgo}
+                  hubs={faceitHubs}
+                  teams={faceitTeams}
+                  tournaments={faceitTournaments}
+                />
                 ) : (
                   <div className="space-y-4">
                     <div className="grid gap-4 lg:grid-cols-3">
@@ -1810,7 +1819,7 @@ export async function ProfileTemplate({
               No matches found yet. Play a few games and refresh to populate.
             </div>
           ) : (
-            combinedMatches.slice(0, 30).map((match) => {
+                    combinedMatches.slice(0, 30).map((match) => {
               const dataSource = String(match.data_source ?? "unknown");
               const rankTypeRaw = match.rank_type ?? null;
               const rankType =
@@ -1836,7 +1845,7 @@ export async function ProfileTemplate({
                   ? "FACEIT"
                   : dataSource.toUpperCase();
               const dataSourceMatchId = String(match.data_source_match_id ?? "");
-              const matchId = String(match.id ?? "");
+                      const matchId = String(match.id ?? "");
               const matchUrl =
                 dataSourceMatchId && dataSource !== "unknown"
                   ? `/match/${encodeURIComponent(dataSource)}/${encodeURIComponent(
@@ -1855,16 +1864,16 @@ export async function ProfileTemplate({
                 <Link
                   key={`${match.id}-${dataSource}`}
                   href={matchUrl}
-                  className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
+                          className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
-                  {mapImage ? (
-                    <>
-                      <MapPreviewImage src={mapImage} alt={rawMapName} />
-                      <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
-                    </>
-                  ) : null}
-                  <div className="relative">
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
+                          {mapImage ? (
+                            <>
+                              <MapPreviewImage src={mapImage} alt={rawMapName} />
+                              <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
+                            </>
+                          ) : null}
+                          <div className="relative">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
                       {label}
@@ -1883,7 +1892,7 @@ export async function ProfileTemplate({
                   </div>
                   <div className="mt-1 text-[rgba(233,228,255,0.5)]">
                     {formatRelativeMatchTime(finishedAt)}
-                  </div>
+                          </div>
                           </div>
                 </Link>
               ) : (
