@@ -9,35 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { AutoFlagBadge } from "@/components/profile/AutoFlagBadge";
-import dynamic from "next/dynamic";
+import {
+  ClientFaceitStats,
+  ClientProgressRing,
+} from "@/components/profile/ProfileClientWidgets";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { getSteamSession } from "@/lib/steam-auth";
 import { redirect } from "next/navigation";
-
-const ProgressRing = dynamic(
-  () => import("@/components/charts/ProgressRing").then((mod) => mod.ProgressRing),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[120px] w-[120px] items-center justify-center">
-        <Skeleton className="h-20 w-20 rounded-full" />
-      </div>
-    ),
-  }
-);
-
-const FaceitStats = dynamic(
-  () => import("@/components/profile/FaceitStats").then((mod) => mod.FaceitStats),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] p-4">
-        <Skeleton className="h-5 w-40" />
-        <Skeleton className="mt-3 h-32 w-full" />
-      </div>
-    ),
-  }
-);
 
 type SteamProfile = {
   personaname?: string;
@@ -1338,9 +1316,9 @@ export async function ProfileTemplate({
                     <div className="grid grid-cols-3 gap-2 text-center">
                       {hasSteamCommends ? (
                         <>
-                          <ProgressRing value={64} label="Friendly" />
-                          <ProgressRing value={48} label="Teacher" />
-                          <ProgressRing value={71} label="Leader" />
+                          <ClientProgressRing value={64} label="Friendly" />
+                          <ClientProgressRing value={48} label="Teacher" />
+                          <ClientProgressRing value={71} label="Leader" />
                         </>
                       ) : (
                         <div className="col-span-3 text-xs text-[rgba(233,228,255,0.6)]">
@@ -1577,7 +1555,7 @@ export async function ProfileTemplate({
               </TabsContent>
 
               <TabsContent value="faceit">
-                <FaceitStats
+                <ClientFaceitStats
                   faceitProfile={faceitProfileData}
                   statsCs2={faceitStatsCs2}
                   statsCsgo={faceitStatsCsgo}
