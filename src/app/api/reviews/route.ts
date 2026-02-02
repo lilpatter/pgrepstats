@@ -48,6 +48,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const { error: deleteError } = await supabase
+    .from("pgrep_reviews")
+    .delete()
+    .eq("target_steam_id", targetSteamId)
+    .eq("reviewer_steam_id", session.steamId);
+
+  if (deleteError) {
+    return NextResponse.json(
+      { error: getPublicError(deleteError.message) },
+      { status: 500 }
+    );
+  }
+
   const { error } = await supabase.from("pgrep_reviews").insert({
     target_steam_id: targetSteamId,
     reviewer_steam_id: session.steamId,
