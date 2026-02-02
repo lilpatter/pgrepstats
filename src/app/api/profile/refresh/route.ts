@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
-import {
-  fetchFaceitProfile,
-  fetchLeetifyProfile,
-  fetchSteamProfile,
-} from "@/lib/profile-sources";
+import { enqueueRefreshJob, runRefreshJob } from "@/lib/refresh-queue";
 
 export async function POST(request: Request) {
   const session = await getSteamSession();
@@ -31,44 +27,60 @@ export async function POST(request: Request) {
     );
   }
 
-  const nowIso = new Date().toISOString();
-  const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
-    fetchSteamProfile(payload.steamId),
-    fetchLeetifyProfile(payload.steamId),
-    fetchFaceitProfile(payload.steamId),
-  ]);
-
-  const updatePayload: Record<string, unknown> = {
-    steam_id: payload.steamId,
-    last_refreshed_at: nowIso,
-    last_seen_at: nowIso,
-  };
-
-  if (steamResult.status === "fulfilled") {
-    updatePayload.steam_snapshot = steamResult.value;
+  const cooldownMinutes = Number(process.env.REFRESH_COOLDOWN_MINUTES ?? "5");
+  if (cooldownMinutes > 0) {
+    const { data } = await supabase
+      .from("pgrep_profiles")
+      .select("last_refreshed_at")
+      .eq("steam_id", payload.steamId)
+      .maybeSingle();
+    const lastRefreshedAt = data?.last_refreshed_at
+      ? new Date(data.last_refreshed_at).getTime()
+      : null;
+    if (lastRefreshedAt) {
+      const diffMs = Date.now() - lastRefreshedAt;
+      const cooldownMs = cooldownMinutes * 60 * 1000;
+      if (diffMs < cooldownMs) {
+        const retryAfterSec = Math.ceil((cooldownMs - diffMs) / 1000);
+        return NextResponse.json(
+          {
+            error: `Refresh cooldown active. Try again in ${retryAfterSec}s.`,
+            retryAfterSec,
+          },
+          { status: 429 }
+        );
+      }
+    }
   }
-  if (leetifyResult.status === "fulfilled") {
-    updatePayload.leetify_snapshot = leetifyResult.value;
-  }
-  if (faceitResult.status === "fulfilled") {
-    updatePayload.faceit_snapshot = faceitResult.value;
-  }
 
-  await supabase.from("pgrep_profiles").upsert(updatePayload, {
-    onConflict: "steam_id",
-  });
-
-  return NextResponse.json(
-    {
-      ok: true,
-      refreshedAt: nowIso,
-      errors: {
-        steam: steamResult.status === "rejected" ? steamResult.reason?.message : null,
-        leetify:
-          leetifyResult.status === "rejected" ? leetifyResult.reason?.message : null,
-        faceit: faceitResult.status === "rejected" ? faceitResult.reason?.message : null,
-      },
-    },
-    { status: 200 }
+  const { job, created } = await enqueueRefreshJob(
+    supabase,
+    payload.steamId,
+    session.steamId
   );
+
+  if (!created) {
+    return NextResponse.json(
+      { ok: true, status: job.status, jobId: job.id },
+      { status: 200 }
+    );
+  }
+
+  try {
+    const result = await runRefreshJob(supabase, job.id, payload.steamId);
+    return NextResponse.json(
+      { ok: true, status: "completed", jobId: job.id, refreshedAt: result.refreshedAt },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "failed",
+        jobId: job.id,
+        error: error instanceof Error ? error.message : "Refresh failed.",
+      },
+      { status: 500 }
+    );
+  }
 }

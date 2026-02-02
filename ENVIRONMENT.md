@@ -13,6 +13,9 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ADMIN_STATS_TOKEN=your_admin_stats_token
 ADMIN_STEAM_IDS=comma_separated_admin_steam_ids
+REFRESH_WORKER_KEY=your_refresh_worker_key
+REFRESH_COOLDOWN_MINUTES=5
+PROFILE_CACHE_MAX_AGE_MINUTES=360
 ```
 
 Notes:

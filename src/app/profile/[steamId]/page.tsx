@@ -3,8 +3,12 @@ import { getEnv } from "@/lib/env";
 import { getSteamSession } from "@/lib/steam-auth";
 import { trackProfileView } from "@/lib/track";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { enqueueRefreshJob } from "@/lib/refresh-queue";
 
 export const revalidate = 60;
+const CACHE_MAX_AGE_MINUTES = Number(
+  process.env.PROFILE_CACHE_MAX_AGE_MINUTES ?? "360"
+);
 
 type SteamResponse = Awaited<ReturnType<typeof fetchSteamProfile>>;
 type LeetifyResponse = Awaited<ReturnType<typeof fetchLeetifyProfile>>;
@@ -325,12 +329,13 @@ export default async function ProfileBySteamId({
         steam_snapshot?: unknown;
         leetify_snapshot?: unknown;
         faceit_snapshot?: unknown;
+        last_refreshed_at?: string | null;
       }
     | null = null;
   if (supabase) {
     const { data } = await supabase
       .from("pgrep_profiles")
-      .select("steam_snapshot, leetify_snapshot, faceit_snapshot")
+      .select("steam_snapshot, leetify_snapshot, faceit_snapshot, last_refreshed_at")
       .eq("steam_id", steamId)
       .maybeSingle();
     cachedProfile = data ?? null;
@@ -346,10 +351,23 @@ export default async function ProfileBySteamId({
     ? (cachedProfile?.faceit_snapshot as FaceitResponse)
     : null;
 
+  const lastRefreshedAtMs = cachedProfile?.last_refreshed_at
+    ? new Date(cachedProfile.last_refreshed_at).getTime()
+    : null;
+  const hasAllCache = Boolean(cachedSteam && cachedLeetify && cachedFaceit);
+  const cacheFresh =
+    hasAllCache &&
+    lastRefreshedAtMs !== null &&
+    Date.now() - lastRefreshedAtMs < CACHE_MAX_AGE_MINUTES * 60 * 1000;
+
+  const shouldFetchSteam = !cachedSteam;
+  const shouldFetchLeetify = !cachedLeetify;
+  const shouldFetchFaceit = !cachedFaceit;
+
   const [steamResult, leetifyResult, faceitResult] = await Promise.allSettled([
-    cachedSteam ? Promise.resolve(cachedSteam) : fetchSteamProfile(steamId),
-    cachedLeetify ? Promise.resolve(cachedLeetify) : fetchLeetifyProfile(steamId),
-    cachedFaceit ? Promise.resolve(cachedFaceit) : fetchFaceitProfile(steamId),
+    shouldFetchSteam ? fetchSteamProfile(steamId) : Promise.resolve(cachedSteam),
+    shouldFetchLeetify ? fetchLeetifyProfile(steamId) : Promise.resolve(cachedLeetify),
+    shouldFetchFaceit ? fetchFaceitProfile(steamId) : Promise.resolve(cachedFaceit),
   ]);
 
   const steamProfile =
@@ -392,7 +410,36 @@ export default async function ProfileBySteamId({
       leetify: leetifyResult.status,
       faceit: faceitResult.status,
     },
+    cache: {
+      fresh: cacheFresh,
+      lastRefreshedAt: cachedProfile?.last_refreshed_at ?? null,
+    },
   });
+
+  const didFetch = shouldFetchSteam || shouldFetchLeetify || shouldFetchFaceit;
+  if (supabase && didFetch) {
+    const nowIso = new Date().toISOString();
+    await supabase.from("pgrep_profiles").upsert(
+      {
+        steam_id: steamId,
+        steam_snapshot: steamResult.status === "fulfilled" ? steamResult.value : null,
+        leetify_snapshot:
+          leetifyResult.status === "fulfilled" ? leetifyResult.value : null,
+        faceit_snapshot:
+          faceitResult.status === "fulfilled" ? faceitResult.value : null,
+        last_refreshed_at: nowIso,
+      },
+      { onConflict: "steam_id" }
+    );
+  }
+
+  if (supabase && !didFetch && !cacheFresh && hasAllCache) {
+    try {
+      await enqueueRefreshJob(supabase, steamId, session?.steamId ?? null);
+    } catch {
+      // Ignore enqueue errors; cached data can still render.
+    }
+  }
 
   let overwatchBanned = false;
   if (supabase) {
@@ -426,7 +473,7 @@ export default async function ProfileBySteamId({
       steamLevel={steamLevel}
       steamFriendsCount={steamFriendsCount}
       steamRecentGames={steamRecentGames}
-      initialRefreshedAt={null}
+      initialRefreshedAt={lastRefreshedAtMs}
       leetifyProfile={leetifyProfile}
       faceitProfile={faceitProfile}
       errors={errors}
