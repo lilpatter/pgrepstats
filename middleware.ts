@@ -6,6 +6,7 @@ const MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX ?? "120");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const CSRF_COOKIE = "pgrep_csrf";
+const FORCE_HTTPS = process.env.FORCE_HTTPS === "true";
 
 function getClientKey(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -15,6 +16,15 @@ function getClientKey(request: NextRequest) {
 }
 
 export function middleware(request: NextRequest) {
+  if (FORCE_HTTPS) {
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    if (forwardedProto && forwardedProto !== "https") {
+      const url = request.nextUrl.clone();
+      url.protocol = "https:";
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   const pathname = request.nextUrl.pathname;
   const isApi = pathname.startsWith("/api");
 

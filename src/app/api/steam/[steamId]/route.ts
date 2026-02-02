@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getEnv } from "@/lib/env";
+import { fetchSteamProfile } from "@/lib/profile-sources";
 
 export async function GET(
   request: Request,
@@ -16,32 +16,15 @@ export async function GET(
   }
 
   try {
-    const apiKey = getEnv("STEAM_WEB_API_KEY");
     const { steamId } = await context.params;
-
-    const summaryRes = await fetch(
-      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`,
-      { next: { revalidate: 60 } }
-    );
-    if (!summaryRes.ok) {
-      throw new Error("Steam profile fetch failed.");
-    }
-    const summaryData = await summaryRes.json();
-    const player = summaryData?.response?.players?.[0];
-
-    const gamesRes = await fetch(
-      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&appids_filter[0]=730&include_appinfo=true`,
-      { next: { revalidate: 300 } }
-    );
-    const gamesData = gamesRes.ok ? await gamesRes.json() : null;
-    const cs2 = gamesData?.response?.games?.[0] ?? null;
+    const profileData = await fetchSteamProfile(steamId);
 
     return NextResponse.json(
       {
         ok: true,
         steamId,
-        profile: player ?? null,
-        cs2,
+        profile: profileData.profile ?? null,
+        cs2: profileData.cs2 ?? null,
       },
       {
         headers: {

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
             ok: false,
             status: "failed",
             jobId: job.id,
-            error: error instanceof Error ? error.message : "Refresh failed.",
+            error: "Refresh failed.",
           },
           { status: 500 }
         );
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         ok: false,
         status: "failed",
         jobId: job.id,
-        error: error instanceof Error ? error.message : "Refresh failed.",
+        error: "Refresh failed.",
       },
       { status: 500 }
     );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
+import { sanitizeText } from "@/lib/utils";
 import { z } from "zod";
 
 const ALLOWED_STATUS = new Set(["approved", "declined", "pending"]);
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
@@ -73,7 +74,9 @@ export async function POST(request: Request) {
   }
 
   if (payload.status !== "pending") {
-    const targetLabel = report.target_persona_name || report.target_steam_id;
+    const targetLabel = sanitizeText(
+      report.target_persona_name || report.target_steam_id
+    );
     const message =
       payload.status === "approved"
         ? `Report for ${targetLabel} is approved.`

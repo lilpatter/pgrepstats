@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { verifyCsrf } from "@/lib/csrf";
+import { sanitizeText } from "@/lib/utils";
 import { z } from "zod";
 
 const ALLOWED_TYPES = new Set([
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     matchUrl,
     matchPreview,
   } = payload;
+  const sanitizedTargetName = targetName ? sanitizeText(targetName) : null;
   if (!ALLOWED_TYPES.has(cheatType)) {
     return NextResponse.json(
       { error: "Invalid cheat type." },
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase is not configured." },
+      { error: "Service unavailable." },
       { status: 500 }
     );
   }
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
 
   const { error } = await supabase.from("overwatch_reports").insert({
     target_steam_id: targetSteamId,
-    target_persona_name: targetName ?? null,
+    target_persona_name: sanitizedTargetName,
     reporter_steam_id: session.steamId,
     reporter_persona_name: session.personaName ?? null,
     demo_url: demo.toString(),

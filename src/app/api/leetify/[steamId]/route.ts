@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getEnv } from "@/lib/env";
+import { fetchLeetifyProfile } from "@/lib/profile-sources";
 
 export async function GET(
   request: Request,
@@ -16,44 +16,8 @@ export async function GET(
   }
 
   try {
-    const apiKey = process.env.LEETIFY_API_KEY;
-    const rawBaseUrl = getEnv(
-      "LEETIFY_BASE_URL",
-      "https://api-public.cs-prod.leetify.com"
-    );
-    const baseUrl = rawBaseUrl.includes("api.leetify.com")
-      ? "https://api-public.cs-prod.leetify.com"
-      : rawBaseUrl;
     const { steamId } = await context.params;
-
-    const headers: Record<string, string> = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    };
-
-    if (apiKey) {
-      headers.Authorization = `Bearer ${apiKey}`;
-      headers._leetify_key = apiKey;
-    }
-
-    const profileUrl = `${baseUrl}/v3/profile?steam64_id=${steamId}`;
-    const profileRes = await fetch(profileUrl, {
-      headers,
-      next: { revalidate: 60 },
-    });
-    console.info("[leetify] profile", {
-      url: profileUrl,
-      status: profileRes.status,
-    });
-
-    if (!profileRes.ok) {
-      const errorText = await profileRes.text();
-      throw new Error(
-        `Leetify profile fetch failed (${profileRes.status}). ${errorText}`
-      );
-    }
-
-    const profile = await profileRes.json();
+    const profile = await fetchLeetifyProfile(steamId);
 
     return NextResponse.json(
       {
