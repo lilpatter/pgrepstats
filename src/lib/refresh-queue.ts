@@ -38,6 +38,7 @@ const PROCESSING_TIMEOUT_MINUTES = Number(
 const QUEUE_TIMEOUT_MINUTES = Number(
   process.env.REFRESH_QUEUE_TIMEOUT_MINUTES ?? "120"
 );
+const CACHE_CLEANUP_DAYS = Number(process.env.CACHE_CLEANUP_DAYS ?? "45");
 
 function computeBackoffSeconds(attemptCount: number) {
   const exponential = BACKOFF_BASE_SECONDS * Math.pow(2, attemptCount);
@@ -225,4 +226,17 @@ export async function cleanupStaleJobs(supabase: any) {
     })
     .eq("status", "queued")
     .lt("created_at", queuedCutoff);
+}
+
+export async function cleanupExpiredCache(supabase: any) {
+  const cutoff = new Date(Date.now() - CACHE_CLEANUP_DAYS * 24 * 60 * 60 * 1000)
+    .toISOString();
+  await supabase
+    .from("pgrep_profiles")
+    .update({
+      steam_snapshot: null,
+      leetify_snapshot: null,
+      faceit_snapshot: null,
+    })
+    .lt("last_refreshed_at", cutoff);
 }

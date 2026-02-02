@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import {
+  cleanupExpiredCache,
   cleanupStaleJobs,
   enqueueRefreshJob,
   runRefreshJob,
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
   }
 
   await cleanupStaleJobs(supabase);
+  await cleanupExpiredCache(supabase);
 
   const cooldownMinutes = Number(process.env.REFRESH_COOLDOWN_MINUTES ?? "5");
   if (cooldownMinutes > 0) {

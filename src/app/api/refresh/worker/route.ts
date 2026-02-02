@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import {
   claimNextQueuedJob,
+  cleanupExpiredCache,
   cleanupStaleJobs,
   runRefreshJob,
 } from "@/lib/refresh-queue";
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
   }
 
   await cleanupStaleJobs(supabase);
+  await cleanupExpiredCache(supabase);
 
   const job = await claimNextQueuedJob(supabase);
   if (!job) {

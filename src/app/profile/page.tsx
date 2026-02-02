@@ -108,6 +108,15 @@ function formatNumber(value?: number, digits = 1) {
   return value.toFixed(digits);
 }
 
+const IS_PROD = process.env.NODE_ENV === "production";
+
+function formatProviderError(label: string, error?: string) {
+  if (!error) return null;
+  return IS_PROD
+    ? `${label} is temporarily unavailable.`
+    : `${label} error: ${error}`;
+}
+
 function valueColor(
   value: number | undefined,
   threshold: number,
@@ -347,6 +356,11 @@ export async function ProfileTemplate({
   viewerSteamId,
 }: ProfileTemplateProps) {
   const nowMs = initialRefreshedAt ?? Date.now();
+  const providerAlerts = [
+    formatProviderError("Steam", errors?.steam),
+    formatProviderError("Leetify", errors?.leetify),
+    formatProviderError("FACEIT", errors?.faceit),
+  ].filter(Boolean) as string[];
   const hasSteam = Boolean(steamProfile);
   const leetifyData =
     (leetifyProfile as { profile?: Record<string, unknown> } | null)?.profile ??
@@ -741,6 +755,16 @@ export async function ProfileTemplate({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        {providerAlerts.length ? (
+          <div className="rounded-2xl border border-[rgba(255,140,64,0.4)] bg-[rgba(20,16,40,0.7)] px-4 py-3 text-xs text-[rgba(233,228,255,0.75)]">
+            Some providers are unavailable. Data may be stale.
+            <div className="mt-2 space-y-1 text-[rgba(233,228,255,0.65)]">
+              {providerAlerts.map((message) => (
+                <div key={message}>{message}</div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <Card className="flex flex-col items-center gap-4 text-center">
           <div className="space-y-2">
@@ -1275,7 +1299,7 @@ export async function ProfileTemplate({
                       <div>Current Status: {hasSteam ? gameStatus : "N/A"}</div>
                       {errors?.steam && (
                         <div className="text-[#56d1ff]">
-                          Steam error: {errors.steam}
+                          {formatProviderError("Steam", errors.steam)}
                         </div>
                       )}
                     </div>
@@ -1370,7 +1394,7 @@ export async function ProfileTemplate({
               </div>
               {errors?.leetify && (
                 <div className="mt-4 rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.6)] p-3 text-xs text-[#56d1ff]">
-                  Leetify error: {errors.leetify}
+                  {formatProviderError("Leetify", errors.leetify)}
                 </div>
               )}
 
