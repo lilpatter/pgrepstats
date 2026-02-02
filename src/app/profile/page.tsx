@@ -1,5 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  Award,
+  BarChart3,
+  CircleDot,
+  Crosshair,
+  Gamepad2,
+  Gauge,
+  ShieldCheck,
+  Swords,
+  Target,
+  Trophy,
+  Users,
+  Clock,
+  User,
+  Backpack,
+  TrendingUp,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -980,21 +997,76 @@ export async function ProfileTemplate({
 
           <Tabs defaultValue={defaultTab}>
             <TabsList className="w-full justify-between">
-              <TabsTrigger value="reputation">Reputation</TabsTrigger>
+              <TabsTrigger value="reputation">
+                <span className="inline-flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Reputation
+                </span>
+              </TabsTrigger>
               {/* Disable when profile is private; later add tooltip + unlock CTA. */}
               <TabsTrigger value="steam" disabled={steamPrivate}>
-                Steam
+                <span className="inline-flex items-center gap-2">
+                  <Target className="h-3.5 w-3.5" />
+                  Steam
+                </span>
               </TabsTrigger>
               {/* Disable when Leetify is private/unavailable; add privacy prompt later. */}
               <TabsTrigger value="leetify" disabled={leetifyPrivate}>
-                Leetify
+                <span className="inline-flex items-center gap-2">
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Leetify
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="faceit">FACEIT</TabsTrigger>
+              <TabsTrigger value="faceit">
+                <span className="inline-flex items-center gap-2">
+                  <Swords className="h-3.5 w-3.5" />
+                  FACEIT
+                </span>
+              </TabsTrigger>
             </TabsList>
 
             <Card className="space-y-6">
               <TabsContent value="reputation">
                 <div className="space-y-6">
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,22,0.7)] p-2 text-[11px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
+                    <button
+                      type="button"
+                      className="rounded-xl bg-[rgba(124,77,255,0.4)] px-4 py-2 text-white shadow-[0_0_18px_rgba(124,77,255,0.35)]"
+                    >
+                      Reputation
+                    </button>
+                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
+                      FACEIT
+                    </button>
+                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
+                      Leetify
+                    </button>
+                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
+                      Renown
+                    </button>
+                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
+                      GamersClub
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-semibold text-white">Player Reputation</div>
+                      <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                        Data-driven analysis of gameplay patterns and performance trends.
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-[rgba(233,228,255,0.6)]">
+                      <button className="flex items-center gap-2 rounded-xl border border-[rgba(155,108,255,0.3)] px-3 py-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        Today
+                      </button>
+                      <button className="rounded-xl border border-[rgba(155,108,255,0.3)] px-3 py-1">
+                        +0.0%
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
                     <div className="flex w-full items-center justify-center lg:w-[220px]">
                       <div
@@ -1036,7 +1108,10 @@ export async function ProfileTemplate({
                     </div>
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center justify-between text-sm text-[rgba(233,228,255,0.7)]">
-                        <div className="text-white">Stats Based Analysis</div>
+                        <div className="flex items-center gap-2 text-white">
+                          <BarChart3 className="h-4 w-4 text-[#47f59d]" />
+                          Stats Based Analysis
+                        </div>
                         <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
                           Leetify + FACEIT
                         </span>
@@ -1124,7 +1199,10 @@ export async function ProfileTemplate({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="text-sm text-white">Anomalies Detected</div>
+                    <div className="flex items-center gap-2 text-sm text-white">
+                      <ShieldCheck className="h-4 w-4 text-[#ffd35a]" />
+                      Anomalies Detected
+                    </div>
                     <div className="grid gap-3 lg:grid-cols-2">
                       <Card className="flex items-center justify-between gap-3 p-4">
                         <div>
@@ -1172,7 +1250,10 @@ export async function ProfileTemplate({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="text-sm text-white">Account Reputation</div>
+                    <div className="flex items-center gap-2 text-sm text-white">
+                      <Award className="h-4 w-4 text-[#47f59d]" />
+                      Account Reputation
+                    </div>
                     <div className="grid gap-3 lg:grid-cols-5">
                       <Card className="group relative space-y-1">
                         <CardDescription>Account Age</CardDescription>
@@ -1223,17 +1304,41 @@ export async function ProfileTemplate({
                       </Card>
                     </div>
                   </div>
+
+                  <div className="rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,22,0.65)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-white">Disclaimer</div>
+                        <div className="mt-1">
+                          This analysis provides statistical estimates and should be used as
+                          supplemental context only. Always consider multiple factors and
+                          match review before conclusions.
+                        </div>
+                      </div>
+                      <div className="shrink-0 rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(12,9,26,0.85)] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.7)]">
+                        Powered by Leetify
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
               <TabsContent value="steam">
-                <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] px-4 py-3 text-xs text-[rgba(233,228,255,0.6)]">
-                  Live Steam data refreshes each time you open this page.
+                <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.7)] px-4 py-3">
+                  <div className="text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.55)]">
+                    Steam Overview
+                  </div>
+                  <div className="mt-1 text-sm text-[rgba(233,228,255,0.7)]">
+                    Live status, activity, and profile metadata.
+                  </div>
                 </div>
 
                 {hasSteam ? (
                   <div className="mt-4 grid gap-4 lg:grid-cols-4">
                     <Card className="space-y-2">
-                      <CardDescription>Status</CardDescription>
+                      <CardDescription className="flex items-center gap-2">
+                        <CircleDot className="h-3.5 w-3.5 text-[#9b6cff]" />
+                        Status
+                      </CardDescription>
                       <div className="text-2xl font-semibold text-white">
                         {personaLabel}
                       </div>
@@ -1242,7 +1347,10 @@ export async function ProfileTemplate({
                       </div>
                     </Card>
                     <Card className="space-y-2">
-                      <CardDescription>Friends</CardDescription>
+                      <CardDescription className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 text-[#9b6cff]" />
+                        Friends
+                      </CardDescription>
                       <div className="text-2xl font-semibold text-white">
                         {steamFriendsCount ?? "N/A"}
                       </div>
@@ -1251,7 +1359,10 @@ export async function ProfileTemplate({
                       </div>
                     </Card>
                     <Card className="space-y-2">
-                      <CardDescription>Recent Playtime</CardDescription>
+                      <CardDescription className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 text-[#9b6cff]" />
+                        Recent Playtime
+                      </CardDescription>
                       <div className="text-2xl font-semibold text-white">
                         {steamRecentGames?.length
                           ? `${Math.round(
@@ -1264,7 +1375,10 @@ export async function ProfileTemplate({
                       </div>
                     </Card>
                     <Card className="space-y-2">
-                      <CardDescription>Steam Level</CardDescription>
+                      <CardDescription className="flex items-center gap-2">
+                        <Gauge className="h-3.5 w-3.5 text-[#9b6cff]" />
+                        Steam Level
+                      </CardDescription>
                       <div className="text-2xl font-semibold text-white">
                         {steamLevel ?? "N/A"}
                       </div>
@@ -1287,14 +1401,18 @@ export async function ProfileTemplate({
 
                 <div className="mt-4 grid gap-4 lg:grid-cols-3">
                   <Card className="space-y-2">
-                    <CardTitle>Steam Profile</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-[#9b6cff]" />
+                      Steam Profile
+                    </CardTitle>
                     <CardDescription>
                       Avatar, join date, and profile details.
                     </CardDescription>
                     <div className="mt-3 space-y-2 text-sm text-[rgba(233,228,255,0.7)]">
-                      <div>Steam ID: {steamId ?? "Unknown"}</div>
-                      <div>Profile: {hasSteam ? steamProfileUrl : "N/A"}</div>
-                      <div>Current Status: {hasSteam ? gameStatus : "N/A"}</div>
+                      <div className="break-all">Steam ID: {steamId ?? "Unknown"}</div>
+                      <div className="break-all">
+                        Profile: {hasSteam ? steamProfileUrl : "N/A"}
+                      </div>
                       {errors?.steam && (
                         <div className="text-[#56d1ff]">
                           {formatProviderError("Steam", errors.steam)}
@@ -1303,7 +1421,10 @@ export async function ProfileTemplate({
                     </div>
                   </Card>
                   <Card className="space-y-2">
-                    <CardTitle>Recent Games</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gamepad2 className="h-4 w-4 text-[#9b6cff]" />
+                      Recent Games
+                    </CardTitle>
                     <CardDescription>Last 2 weeks activity.</CardDescription>
                     <div className="mt-3 space-y-3 text-sm text-[rgba(233,228,255,0.7)]">
                       {steamRecentGames?.length ? (
@@ -1326,20 +1447,29 @@ export async function ProfileTemplate({
                       )}
                     </div>
                   </Card>
-                  <Card className="space-y-2">
-                    <CardTitle>CS2 Inventory</CardTitle>
+                  <Card className="space-y-2 opacity-60">
+                    <CardTitle className="flex items-center gap-2">
+                      <Backpack className="h-4 w-4 text-[#9b6cff]" />
+                      CS2 Inventory
+                    </CardTitle>
                     <CardDescription>Market value, pins, and collectibles.</CardDescription>
                     <div className="grid grid-cols-2 gap-3 text-sm text-[rgba(233,228,255,0.7)]">
                       <div>Value: N/A</div>
                       <div>Medals: N/A</div>
                       <div>Pins: N/A</div>
                     </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.55)]">
+                      Inventory data not available yet.
+                    </div>
                   </Card>
                 </div>
 
                 <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                  <Card className="space-y-2">
-                    <CardTitle>Commends</CardTitle>
+                  <Card className="space-y-2 opacity-60">
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="h-4 w-4 text-[#9b6cff]" />
+                      Commends
+                    </CardTitle>
                     <CardDescription>Friendly / Teacher / Leader.</CardDescription>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       {hasSteamCommends ? (
@@ -1358,21 +1488,27 @@ export async function ProfileTemplate({
                         </div>
                       )}
                     </div>
+                    <div className="text-xs text-[rgba(233,228,255,0.55)]">
+                      Commend data not available yet.
+                    </div>
                   </Card>
                 </div>
               </TabsContent>
 
               <TabsContent value="leetify">
-              <div className="relative grid gap-4 lg:grid-cols-5 pt-10 pr-10">
-                <div className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.85)] shadow-[0_0_18px_rgba(124,77,255,0.25)]">
+              <div className="relative grid gap-4 lg:grid-cols-5 pt-12 pr-12">
+                <div className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.85)] p-1 shadow-[0_0_18px_rgba(124,77,255,0.25)]">
                   <img
                     src="/leetify-badge.png"
                     alt="Leetify"
-                    className="h-6 w-6 opacity-90"
+                    className="h-full w-full object-contain opacity-95"
                   />
                 </div>
                 <Card className="space-y-2">
-                  <CardDescription>Rating</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <BarChart3 className="h-3.5 w-3.5 text-[#9b6cff]" />
+                    Rating
+                  </CardDescription>
                   {hasLeetify ? (
                     <div className={`text-2xl font-semibold ${valueColor(leetifyRanks?.leetify ?? undefined, 0.5)}`}>
                       {formatNumber(leetifyRanks?.leetify ?? undefined, 2)}
@@ -1382,7 +1518,10 @@ export async function ProfileTemplate({
                   )}
                 </Card>
                 <Card className="space-y-2">
-                  <CardDescription>Premier</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <Trophy className="h-3.5 w-3.5 text-[#9b6cff]" />
+                    Premier
+                  </CardDescription>
                   {hasLeetify ? (
                     <div className="text-2xl font-semibold text-white">
                       {leetifyRanks?.premier != null
@@ -1394,7 +1533,10 @@ export async function ProfileTemplate({
                   )}
                 </Card>
                 <Card className="space-y-2">
-                  <CardDescription>Win Rate</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <TrendingUp className="h-3.5 w-3.5 text-[#9b6cff]" />
+                    Win Rate
+                  </CardDescription>
                   {hasLeetify ? (
                     <div className={`text-2xl font-semibold ${valueColor(leetifyWinrate ?? undefined, 0.5)}`}>
                       {formatPercent(leetifyWinrate, true)}
@@ -1404,7 +1546,10 @@ export async function ProfileTemplate({
                   )}
                 </Card>
                 <Card className="space-y-2">
-                  <CardDescription>HS%</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <Crosshair className="h-3.5 w-3.5 text-[#9b6cff]" />
+                    HS%
+                  </CardDescription>
                   {hasLeetify ? (
                     <div className={`text-2xl font-semibold ${valueColor(leetifyStats?.accuracy_head ?? undefined, 20)}`}>
                       {formatPercent(leetifyStats?.accuracy_head)}
@@ -1414,7 +1559,10 @@ export async function ProfileTemplate({
                   )}
                 </Card>
                 <Card className="space-y-2">
-                  <CardDescription>Matches</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <Swords className="h-3.5 w-3.5 text-[#9b6cff]" />
+                    Matches
+                  </CardDescription>
                   {hasLeetify ? (
                     <div className="text-2xl font-semibold text-white">
                       {leetifyMatches?.toLocaleString() ?? "N/A"}

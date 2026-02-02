@@ -35,7 +35,7 @@ export function TabsList({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.55)] p-2",
+        "flex w-full flex-wrap items-center gap-2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,8,22,0.75)] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]",
         className
       )}
       {...props}
@@ -70,12 +70,12 @@ export function TabsTrigger({
       }}
       disabled={disabled}
       className={cn(
-        "rounded-xl px-4 py-2 text-sm font-semibold transition",
+        "flex-1 rounded-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] transition",
         disabled
           ? "cursor-not-allowed text-[rgba(233,228,255,0.35)]"
           : isActive
-          ? "bg-gradient-to-r from-[#7c4dff] to-[#9b6cff] text-white shadow-[0_0_20px_rgba(124,77,255,0.4)]"
-          : "text-[rgba(233,228,255,0.7)] hover:text-white",
+          ? "bg-[rgba(124,77,255,0.4)] text-white shadow-[0_0_20px_rgba(124,77,255,0.35)]"
+          : "text-[rgba(233,228,255,0.65)] hover:text-white hover:bg-[rgba(124,77,255,0.15)]",
         className
       )}
     >
