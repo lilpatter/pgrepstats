@@ -1028,27 +1028,6 @@ export async function ProfileTemplate({
             <Card className="space-y-6">
               <TabsContent value="reputation">
                 <div className="space-y-6">
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,22,0.7)] p-2 text-[11px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.6)]">
-                    <button
-                      type="button"
-                      className="rounded-xl bg-[rgba(124,77,255,0.4)] px-4 py-2 text-white shadow-[0_0_18px_rgba(124,77,255,0.35)]"
-                    >
-                      Reputation
-                    </button>
-                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
-                      FACEIT
-                    </button>
-                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
-                      Leetify
-                    </button>
-                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
-                      Renown
-                    </button>
-                    <button type="button" className="rounded-xl px-4 py-2 hover:text-white">
-                      GamersClub
-                    </button>
-                  </div>
-
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-lg font-semibold text-white">Player Reputation</div>
@@ -1060,9 +1039,6 @@ export async function ProfileTemplate({
                       <button className="flex items-center gap-2 rounded-xl border border-[rgba(155,108,255,0.3)] px-3 py-1">
                         <Clock className="h-3.5 w-3.5" />
                         Today
-                      </button>
-                      <button className="rounded-xl border border-[rgba(155,108,255,0.3)] px-3 py-1">
-                        +0.0%
                       </button>
                     </div>
                   </div>
@@ -1112,9 +1088,14 @@ export async function ProfileTemplate({
                           <BarChart3 className="h-4 w-4 text-[#47f59d]" />
                           Stats Based Analysis
                         </div>
-                        <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
-                          Leetify + FACEIT
-                        </span>
+                        <div className="flex items-center gap-2 text-[10px] text-[rgba(233,228,255,0.6)]">
+                          <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5">
+                            Leetify + FACEIT
+                          </span>
+                          <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5">
+                            +0.0%
+                          </span>
+                        </div>
                       </div>
                       <div className="grid gap-3 lg:grid-cols-2">
                         {statsAnalysis.map((stat) => (
@@ -1199,16 +1180,21 @@ export async function ProfileTemplate({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-white">
-                      <ShieldCheck className="h-4 w-4 text-[#ffd35a]" />
-                      Anomalies Detected
+                    <div className="flex items-center justify-between text-sm text-white">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-[#ffd35a]" />
+                        Anomalies Detected
+                      </div>
+                      <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
+                        +0.0%
+                      </span>
                     </div>
                     <div className="grid gap-3 lg:grid-cols-2">
-                      <Card className="flex items-center justify-between gap-3 p-4">
+                      <Card className="group relative flex items-center justify-between gap-3 p-4">
                         <div>
                           <CardTitle>Rank Mismatch</CardTitle>
                           <CardDescription>
-                            
+                            Performance signals exceed current rank expectations.
                           </CardDescription>
                         </div>
                         <span
@@ -1226,12 +1212,19 @@ export async function ProfileTemplate({
                             ? "Mismatch"
                             : "Aligned"}
                         </span>
+                        <div className="pointer-events-none absolute -top-20 right-3 hidden w-48 rounded-lg border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.98)] p-3 text-[11px] text-[rgba(233,228,255,0.8)] shadow-lg group-hover:block">
+                          <div className="text-xs font-semibold text-white">Rank Mismatch</div>
+                          <div className="mt-2">
+                            Compares match performance patterns with the displayed
+                            competitive rank to spot inconsistent skill signals.
+                          </div>
+                        </div>
                       </Card>
-                      <Card className="flex items-center justify-between gap-3 p-4">
+                      <Card className="group relative flex items-center justify-between gap-3 p-4">
                         <div>
                           <CardTitle>High Skill FACEIT Inactivity</CardTitle>
                           <CardDescription>
-                            
+                            High rating with prolonged FACEIT inactivity.
                           </CardDescription>
                         </div>
                         <span
@@ -1245,14 +1238,26 @@ export async function ProfileTemplate({
                             ? `${highSkillInactivityScore}%`
                             : "Normal"}
                         </span>
+                        <div className="pointer-events-none absolute -top-20 right-3 hidden w-48 rounded-lg border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.98)] p-3 text-[11px] text-[rgba(233,228,255,0.8)] shadow-lg group-hover:block">
+                          <div className="text-xs font-semibold text-white">FACEIT Inactivity</div>
+                          <div className="mt-2">
+                            Flags high-skill profiles that have not played FACEIT
+                            recently, which can indicate mismatched activity signals.
+                          </div>
+                        </div>
                       </Card>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-white">
-                      <Award className="h-4 w-4 text-[#47f59d]" />
-                      Account Reputation
+                    <div className="flex items-center justify-between text-sm text-white">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-4 w-4 text-[#47f59d]" />
+                        Account Reputation
+                      </div>
+                      <span className="rounded-full border border-[rgba(155,108,255,0.3)] px-2 py-0.5 text-[10px] text-[rgba(233,228,255,0.6)]">
+                        +0.0%
+                      </span>
                     </div>
                     <div className="grid gap-3 lg:grid-cols-5">
                       <Card className="group relative space-y-1">
@@ -1305,21 +1310,6 @@ export async function ProfileTemplate({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,22,0.65)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-white">Disclaimer</div>
-                        <div className="mt-1">
-                          This analysis provides statistical estimates and should be used as
-                          supplemental context only. Always consider multiple factors and
-                          match review before conclusions.
-                        </div>
-                      </div>
-                      <div className="shrink-0 rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(12,9,26,0.85)] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.7)]">
-                        Powered by Leetify
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </TabsContent>
               <TabsContent value="steam">
@@ -1753,6 +1743,26 @@ export async function ProfileTemplate({
                   </Card>
                 </div>
               </details>
+
+              <div className="mt-6 rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(10,8,22,0.65)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-white">Disclaimer</div>
+                    <div className="mt-1">
+                      This analysis provides statistical estimates and should be used as
+                      supplemental context only. Always consider multiple factors and
+                      match review before conclusions.
+                    </div>
+                  </div>
+                  <div className="shrink-0 rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(12,9,26,0.85)] p-2">
+                    <img
+                      src="/leetify-badge.png"
+                      alt="Leetify"
+                      className="h-8 w-8 object-contain opacity-95"
+                    />
+                  </div>
+                </div>
+              </div>
 
               </TabsContent>
 
