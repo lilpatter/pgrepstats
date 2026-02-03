@@ -954,7 +954,7 @@ export async function ProfileTemplate({
             </div>
           </div>
         ) : null}
-      <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <section className="grid min-w-0 gap-6 lg:grid-cols-[280px_1fr]">
         <div className="space-y-6">
           <Card className="flex flex-col items-center gap-4 text-center">
           <div className="space-y-2">
@@ -1266,7 +1266,7 @@ export async function ProfileTemplate({
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           <Tabs defaultValue={defaultTab}>
             <TabsList className="w-full justify-between">
               <TabsTrigger value="reputation">
