@@ -31,7 +31,7 @@ export function HorizontalScroll({ className, children }: HorizontalScrollProps)
   return (
     <div
       ref={ref}
-      className={cn("overflow-x-scroll pb-4", className)}
+      className={cn("w-full max-w-full overflow-x-auto pb-4", className)}
       style={{ scrollbarGutter: "stable both-edges" }}
       onMouseEnter={() => {
         if (ref.current) {

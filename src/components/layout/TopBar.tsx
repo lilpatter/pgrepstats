@@ -120,12 +120,12 @@ export async function TopBar() {
               <div className="relative h-8 w-8 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.35)]">
                 <ImageWithFallback
                   src={session.avatar ?? ""}
-                  alt={session.personaName}
-                  fill
-                  sizes="32px"
+                    alt={session.personaName}
+                    fill
+                    sizes="32px"
                   fallbackText="PG"
                   fallbackClassName="bg-gradient-to-br from-[#7c4dff] to-[#56d1ff] text-[10px] font-bold text-white"
-                />
+                  />
               </div>
               <span>{session.personaName}</span>
             </summary>
