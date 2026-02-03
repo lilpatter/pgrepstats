@@ -257,6 +257,37 @@ function getPremierBadge(rating?: number | null) {
   return "/premier/1000.png";
 }
 
+const COMPETITIVE_RANK_LABELS = [
+  "Silver I",
+  "Silver II",
+  "Silver III",
+  "Silver IV",
+  "Silver Elite",
+  "Silver Elite Master",
+  "Gold Nova I",
+  "Gold Nova II",
+  "Gold Nova III",
+  "Gold Nova Master",
+  "Master Guardian I",
+  "Master Guardian II",
+  "Master Guardian Elite",
+  "Distinguished Master Guardian",
+  "Legendary Eagle",
+  "Legendary Eagle Master",
+  "Supreme Master First Class",
+  "Global Elite",
+];
+
+function formatCompetitiveRank(rank?: number | null) {
+  if (!rank || Number.isNaN(rank)) return "Unranked";
+  return COMPETITIVE_RANK_LABELS[rank - 1] ?? `Rank ${rank}`;
+}
+
+function getCompetitiveBadge(rank?: number | null) {
+  if (!rank || Number.isNaN(rank)) return null;
+  return `/competitive/${rank}.png`;
+}
+
 function countryCodeToFlagUrl(code?: string) {
   if (!code || code.length !== 2) return null;
   return `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
@@ -480,6 +511,7 @@ export async function ProfileTemplate({
         premier?: number | null;
         leetify?: number | null;
         wingman?: number | null;
+        competitive?: Array<{ map_name?: string; rank?: number | null }>;
       }
     | undefined;
   const leetifyRating = leetifyData?.rating as
@@ -524,6 +556,9 @@ export async function ProfileTemplate({
     | Array<Record<string, unknown>>
     | undefined;
   const leetifyMapStats = aggregateLeetifyMaps(leetifyRecentMatches);
+  const competitiveMapRanks = (leetifyRanks?.competitive ?? [])
+    .filter((entry) => entry && entry.map_name)
+    .sort((a, b) => String(a.map_name ?? "").localeCompare(String(b.map_name ?? "")));
   const premierBadge =
     leetifyRanks?.premier == null ? null : getPremierBadge(leetifyRanks.premier);
   const leetifyRecentForm = (leetifyRecentMatches ?? [])
@@ -1799,6 +1834,64 @@ export async function ProfileTemplate({
                     </div>
                   ) : (
                     <Skeleton className="h-16 w-full" />
+                  )}
+                </Card>
+              </div>
+
+              <div className="mt-6">
+                <Card className="space-y-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-[#9b6cff]" />
+                    Competitive Map Ranks
+                  </CardTitle>
+                  <CardDescription>
+                    Map-specific competitive ranks from recent matchmaking.
+                  </CardDescription>
+                  {hasLeetify ? (
+                    competitiveMapRanks.length > 0 ? (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {competitiveMapRanks.map((entry) => {
+                          const mapName = String(entry.map_name ?? "unknown");
+                          const badge = getCompetitiveBadge(entry.rank ?? null);
+                          return (
+                            <div
+                              key={`${mapName}-${entry.rank ?? "na"}`}
+                              className="flex items-center gap-3 rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(12,9,26,0.7)] px-4 py-3"
+                            >
+                              <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(10,7,20,0.7)]">
+                                {badge ? (
+                                  <ImageWithFallback
+                                    src={badge}
+                                    alt={formatCompetitiveRank(entry.rank ?? null)}
+                                    fill
+                                    sizes="40px"
+                                    fallbackText="N/A"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-xs text-[rgba(233,228,255,0.6)]">
+                                    N/A
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-sm font-semibold text-white">
+                                  {formatMapName(mapName)}
+                                </div>
+                                <div className="text-xs text-[rgba(233,228,255,0.6)]">
+                                  {formatCompetitiveRank(entry.rank ?? null)}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.6)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+                        No competitive map ranks found yet.
+                      </div>
+                    )
+                  ) : (
+                    <Skeleton className="h-24 w-full" />
                   )}
                 </Card>
               </div>

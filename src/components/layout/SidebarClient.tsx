@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   BookOpen,
@@ -45,6 +46,7 @@ export function SidebarClient({
 }) {
   const [session, setSession] = useState<SessionState | null>(initialSession);
   const [isAdmin, setIsAdmin] = useState<boolean>(initialIsAdmin);
+  const pathname = usePathname();
 
   const refreshSession = async () => {
     try {
@@ -97,6 +99,12 @@ export function SidebarClient({
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const href = item.label === "Profile" ? profileHref : item.href;
+          const isActive =
+            pathname === href ||
+            (item.label === "Profile" && pathname.startsWith("/profile")) ||
+            (item.label === "AI Flags" && pathname.startsWith("/ai-flags")) ||
+            (item.label === "Reported Players" &&
+              pathname.startsWith("/reported-players"));
           if (!item.available) {
             return (
               <div
@@ -117,7 +125,10 @@ export function SidebarClient({
               key={item.href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
+                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white",
+                isActive
+                  ? "bg-[rgba(124,77,255,0.2)] text-white shadow-[0_0_22px_rgba(124,77,255,0.2)]"
+                  : ""
               )}
             >
               <Icon className="h-4 w-4 text-[#9b6cff]" />
@@ -129,7 +140,10 @@ export function SidebarClient({
           <Link
             href="/admin"
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
+              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white",
+              pathname.startsWith("/admin")
+                ? "bg-[rgba(124,77,255,0.2)] text-white shadow-[0_0_22px_rgba(124,77,255,0.2)]"
+                : ""
             )}
           >
             <ShieldAlert className="h-4 w-4 text-[#9b6cff]" />
