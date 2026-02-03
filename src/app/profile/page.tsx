@@ -2059,7 +2059,7 @@ export async function ProfileTemplate({
                 )}
               </TabsContent>
             </Card>
-            <Card className="space-y-3">
+            <Card className="space-y-3 min-w-0 w-full overflow-hidden">
               <CardTitle>Recent Matches</CardTitle>
               <CardDescription>
                 Combined Leetify matches with source indicators.
