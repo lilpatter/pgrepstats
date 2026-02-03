@@ -2064,7 +2064,7 @@ export async function ProfileTemplate({
               <CardDescription>
                 Combined Leetify matches with source indicators.
               </CardDescription>
-              <HorizontalScroll className="flex gap-3">
+              <HorizontalScroll className="flex flex-nowrap gap-3">
                 {combinedMatches.length === 0 ? (
                   <div className="min-w-[260px] rounded-2xl border border-[rgba(155,108,255,0.3)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
                     No matches found yet. Play a few games and refresh to populate.
