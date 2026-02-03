@@ -955,7 +955,8 @@ export async function ProfileTemplate({
           </div>
         ) : null}
       <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <Card className="flex flex-col items-center gap-4 text-center">
+        <div className="space-y-6">
+          <Card className="flex flex-col items-center gap-4 text-center">
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2 text-xl font-semibold text-white">
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(155,108,255,0.6)] bg-[rgba(12,9,26,0.9)] text-xs font-semibold text-white shadow-[0_0_20px_rgba(124,77,255,0.45)]">
@@ -1191,7 +1192,79 @@ export async function ProfileTemplate({
               hasReviewed={hasReviewedByViewer}
             />
           </div>
-        </Card>
+          </Card>
+
+          <Card className="space-y-4">
+            <CardTitle className="text-center">Competitive Map Ranks</CardTitle>
+            <CardDescription className="text-center">
+              Map-specific competitive ranks.
+            </CardDescription>
+            {hasLeetify ? (
+              competitiveMapRanks.length > 0 ? (
+                <div className="space-y-2">
+                  {competitiveMapRanks.map((entry) => {
+                    const mapName = String(entry.map_name ?? "unknown");
+                    const rawMapName = mapName.toLowerCase();
+                    const mapIcon =
+                      rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
+                        ? `/map-icons/${rawMapName}.svg`
+                        : null;
+                    const badge = getCompetitiveBadge(entry.rank ?? null);
+                    return (
+                      <div
+                        key={`${mapName}-${entry.rank ?? "na"}`}
+                        className="flex items-center justify-between rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(12,9,26,0.7)] px-3 py-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-8 w-8 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(10,7,20,0.7)]">
+                            {mapIcon ? (
+                              <ImageWithFallback
+                                src={mapIcon}
+                                alt={formatMapName(mapName)}
+                                fill
+                                sizes="32px"
+                                fallbackText="MAP"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] text-[rgba(233,228,255,0.6)]">
+                                N/A
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-sm font-semibold text-white">
+                            {formatMapName(mapName)}
+                          </div>
+                        </div>
+                        <div className="relative h-6 w-16">
+                          {badge ? (
+                            <ImageWithFallback
+                              src={badge}
+                              alt={formatCompetitiveRank(entry.rank ?? null)}
+                              fill
+                              sizes="64px"
+                              className="object-contain"
+                              fallbackText="N/A"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[10px] text-[rgba(233,228,255,0.6)]">
+                              N/A
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.6)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+                  No competitive map ranks found yet.
+                </div>
+              )
+            ) : (
+              <Skeleton className="h-24 w-full" />
+            )}
+          </Card>
+        </div>
 
         <div className="space-y-4">
           <Tabs defaultValue={defaultTab}>
@@ -1834,64 +1907,6 @@ export async function ProfileTemplate({
                     </div>
                   ) : (
                     <Skeleton className="h-16 w-full" />
-                  )}
-                </Card>
-              </div>
-
-              <div className="mt-6">
-                <Card className="space-y-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-[#9b6cff]" />
-                    Competitive Map Ranks
-                  </CardTitle>
-                  <CardDescription>
-                    Map-specific competitive ranks from recent matchmaking.
-                  </CardDescription>
-                  {hasLeetify ? (
-                    competitiveMapRanks.length > 0 ? (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {competitiveMapRanks.map((entry) => {
-                          const mapName = String(entry.map_name ?? "unknown");
-                          const badge = getCompetitiveBadge(entry.rank ?? null);
-                          return (
-                            <div
-                              key={`${mapName}-${entry.rank ?? "na"}`}
-                              className="flex items-center gap-3 rounded-2xl border border-[rgba(155,108,255,0.25)] bg-[rgba(12,9,26,0.7)] px-4 py-3"
-                            >
-                              <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.3)] bg-[rgba(10,7,20,0.7)]">
-                                {badge ? (
-                                  <ImageWithFallback
-                                    src={badge}
-                                    alt={formatCompetitiveRank(entry.rank ?? null)}
-                                    fill
-                                    sizes="40px"
-                                    fallbackText="N/A"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-xs text-[rgba(233,228,255,0.6)]">
-                                    N/A
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-sm font-semibold text-white">
-                                  {formatMapName(mapName)}
-                                </div>
-                                <div className="text-xs text-[rgba(233,228,255,0.6)]">
-                                  {formatCompetitiveRank(entry.rank ?? null)}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(12,9,26,0.6)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
-                        No competitive map ranks found yet.
-                      </div>
-                    )
-                  ) : (
-                    <Skeleton className="h-24 w-full" />
                   )}
                 </Card>
               </div>
