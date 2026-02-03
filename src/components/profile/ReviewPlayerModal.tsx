@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Minus, Plus, X } from "lucide-react";
+import { Check, ChevronRight, Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 import { getCsrfToken } from "@/lib/csrf-client";
@@ -389,7 +389,7 @@ export function ReviewPlayerModal({
                                     : "border-[rgba(233,228,255,0.3)] text-transparent"
                                 }`}
                               >
-                                ✓
+                                <Check className="h-3.5 w-3.5" />
                               </span>
                               {reason}
                             </button>

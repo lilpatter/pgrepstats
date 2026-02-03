@@ -70,7 +70,7 @@ export function TabsTrigger({
       }}
       disabled={disabled}
       className={cn(
-        "flex-1 rounded-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] transition",
+        "flex-1 rounded-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0",
         disabled
           ? "cursor-not-allowed text-[rgba(233,228,255,0.35)]"
           : isActive

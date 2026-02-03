@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Shield, Swords, Trophy, Users } from "lucide-react";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 type FaceitStatsResponse = {
   lifetime?: Record<string, unknown>;
@@ -355,19 +355,13 @@ export function FaceitStats({
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] p-4">
           <div className="flex items-center gap-4">
             <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.8)]">
-              {faceitProfile?.avatar ? (
-                <Image
-                  src={faceitProfile.avatar}
-                  alt="FACEIT avatar"
-                  fill
-                  sizes="48px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-[rgba(233,228,255,0.6)]">
-                  N/A
-                </div>
-              )}
+              <ImageWithFallback
+                src={faceitProfile?.avatar ?? ""}
+                alt="FACEIT avatar"
+                fill
+                sizes="48px"
+                fallbackText="N/A"
+              />
             </div>
             <div>
               <div className="text-sm font-semibold text-white">
@@ -432,11 +426,12 @@ export function FaceitStats({
                 <CardDescription>{stat.label}</CardDescription>
                 <div className="flex items-center justify-center gap-2 text-2xl font-semibold text-white">
                   {stat.badge ? (
-                    <Image
+                    <ImageWithFallback
                       src={stat.badge}
                       alt={`${stat.label} badge`}
                       width={22}
                       height={22}
+                      fallbackClassName="h-[22px] w-[22px] rounded-full text-[8px]"
                     />
                   ) : null}
                   {stat.value}
@@ -583,19 +578,14 @@ export function FaceitStats({
                         {teams.map((team, teamIndex) => (
                           <div key={`${team.id}-${teamIndex}`} className="flex items-center gap-2">
                             <div className="relative h-7 w-7 overflow-hidden rounded-lg border border-[rgba(155,108,255,0.25)] bg-[rgba(10,7,20,0.6)]">
-                              {team.avatar ? (
-                                <Image
-                                  src={team.avatar}
-                                  alt={team.name}
-                                  fill
-                                  sizes="28px"
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[10px] text-[rgba(233,228,255,0.6)]">
-                                  ?
-                                </div>
-                              )}
+                              <ImageWithFallback
+                                src={team.avatar ?? ""}
+                                alt={team.name ?? "Team"}
+                                fill
+                                sizes="28px"
+                                fallbackText="?"
+                                fallbackClassName="text-[10px]"
+                              />
                             </div>
                             {teamIndex === 0 && teams.length > 1 ? (
                               <span className="text-[rgba(233,228,255,0.4)]">vs</span>
@@ -705,19 +695,13 @@ export function FaceitStats({
                   className="flex items-center gap-4 rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] p-4 transition hover:border-[rgba(155,108,255,0.6)]"
                 >
                   <div className="relative h-12 w-12 overflow-hidden rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.8)]">
-                    {hubData.avatar ? (
-                      <Image
-                        src={hubData.avatar}
-                        alt={hubName}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-[rgba(233,228,255,0.6)]">
-                        N/A
-                      </div>
-                    )}
+                    <ImageWithFallback
+                      src={hubData.avatar ?? ""}
+                      alt={hubName}
+                      fill
+                      sizes="48px"
+                      fallbackText="N/A"
+                    />
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-white">{hubName}</div>
@@ -770,19 +754,13 @@ export function FaceitStats({
                     className="flex items-center gap-4 rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] p-4 transition hover:border-[rgba(155,108,255,0.6)]"
                   >
                     <div className="relative h-12 w-12 overflow-hidden rounded-full border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.8)]">
-                      {teamData.avatar ? (
-                        <Image
-                          src={teamData.avatar}
-                          alt={teamName}
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-[rgba(233,228,255,0.6)]">
-                          N/A
-                        </div>
-                      )}
+                      <ImageWithFallback
+                        src={teamData.avatar ?? ""}
+                        alt={teamName}
+                        fill
+                        sizes="48px"
+                        fallbackText="N/A"
+                      />
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-semibold text-white">{teamName}</div>

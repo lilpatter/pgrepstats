@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, LogOut, Settings, User } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { getSteamSession } from "@/lib/steam-auth";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 function formatTime(value?: string | null) {
   if (!value) return "N/A";
@@ -42,6 +42,7 @@ export async function TopBar() {
       message: "Steam tab refreshed with friends, recent games, and status.",
     },
   ].sort((a, b) => b.date.localeCompare(a.date));
+  const notificationCount = notifications?.data?.length ?? 0;
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[rgba(155,108,255,0.2)] bg-[rgba(8,6,20,0.7)] px-6 py-4 backdrop-blur">
       <div className="hidden w-[520px] lg:block">
@@ -59,10 +60,15 @@ export async function TopBar() {
           Work in progress
         </span>
         <details className="group relative">
-          <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.6)] text-[#9b6cff] transition hover:text-white">
-            <Bell className="h-4 w-4" />
+          <summary className="relative flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.6)] text-[#9b6cff] transition-all hover:-translate-y-0.5 hover:text-white">
+            <Bell className={`h-4 w-4 ${notificationCount ? "animate-bell" : ""}`} />
+            {notificationCount ? (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-[rgba(255,90,122,0.6)] bg-[rgba(255,90,122,0.85)] px-1 text-[10px] font-semibold text-white">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            ) : null}
           </summary>
-          <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.95)] p-4 text-sm text-[rgba(233,228,255,0.8)] shadow-xl">
+          <div className="dropdown-panel absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.95)] p-4 text-sm text-[rgba(233,228,255,0.8)] shadow-xl">
             {session ? (
               <>
                 <div className="mb-3 text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
@@ -110,25 +116,20 @@ export async function TopBar() {
         </details>
         {session ? (
           <details className="group relative">
-            <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.6)] px-3 py-2 text-sm font-semibold text-white">
+            <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(20,16,40,0.6)] px-3 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5">
               <div className="relative h-8 w-8 overflow-hidden rounded-xl border border-[rgba(155,108,255,0.35)]">
-                {session.avatar ? (
-                  <Image
-                    src={session.avatar}
-                    alt={session.personaName}
-                    fill
-                    sizes="32px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#7c4dff] to-[#56d1ff] text-[10px] font-bold text-white">
-                    PG
-                  </div>
-                )}
+                <ImageWithFallback
+                  src={session.avatar ?? ""}
+                  alt={session.personaName}
+                  fill
+                  sizes="32px"
+                  fallbackText="PG"
+                  fallbackClassName="bg-gradient-to-br from-[#7c4dff] to-[#56d1ff] text-[10px] font-bold text-white"
+                />
               </div>
               <span>{session.personaName}</span>
             </summary>
-            <div className="absolute right-0 z-30 mt-2 w-56 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.95)] p-3 text-sm text-[rgba(233,228,255,0.8)] shadow-xl">
+            <div className="dropdown-panel absolute right-0 z-30 mt-2 w-56 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(10,7,20,0.95)] p-3 text-sm text-[rgba(233,228,255,0.8)] shadow-xl">
               <div className="mb-2 text-xs uppercase tracking-[0.2em] text-[rgba(233,228,255,0.5)]">
                 My Account
               </div>
@@ -136,7 +137,7 @@ export async function TopBar() {
                 href={`/profile/${session.steamId}`}
                 className="flex items-center gap-2 rounded-xl px-2 py-2 text-[rgba(233,228,255,0.9)] transition hover:bg-[rgba(155,108,255,0.15)]"
               >
-                <span className="text-base">👤</span>
+                <User className="h-4 w-4 text-[#9b6cff]" />
                 View Profile
               </Link>
               {/* TODO: WIP — implement account settings (email, privacy, API keys). */}
@@ -145,7 +146,7 @@ export async function TopBar() {
                 className="mt-1 flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-2 py-2 text-left text-[rgba(233,228,255,0.4)]"
                 title="In the works"
               >
-                <span className="text-base">⚙️</span>
+                <Settings className="h-4 w-4 text-[rgba(233,228,255,0.4)]" />
                 Account Settings
                 <span className="ml-auto rounded-full border border-[rgba(155,108,255,0.2)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[rgba(233,228,255,0.4)]">
                   WIP
@@ -156,7 +157,7 @@ export async function TopBar() {
                 href="/api/auth/logout"
                 className="flex items-center gap-2 rounded-xl px-2 py-2 text-[#ff5a7a] transition hover:bg-[rgba(255,90,122,0.15)]"
               >
-                <span className="text-base">⤴️</span>
+                <LogOut className="h-4 w-4 text-[#ff5a7a]" />
                 Sign out
               </Link>
             </div>

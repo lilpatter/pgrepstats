@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Award,
+  BadgeCheck,
+  Ban,
   BarChart3,
   CircleDot,
   Crosshair,
@@ -16,6 +17,7 @@ import {
   User,
   Backpack,
   TrendingUp,
+  Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -23,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { MapPreviewImage } from "@/components/profile/MapPreviewImage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ReportOverwatchModal } from "@/components/profile/ReportOverwatchModal";
 import { ReviewPlayerModal } from "@/components/profile/ReviewPlayerModal";
@@ -931,12 +934,13 @@ export async function ProfileTemplate({
                   );
                   return flagUrl ? (
                     <span className="flex items-center">
-                      <img
+                      <ImageWithFallback
                         src={flagUrl}
                         alt={steamProfile.loccountrycode}
-                        title={steamProfile.loccountrycode}
-                        className="h-4 w-6 rounded-sm border border-[rgba(155,108,255,0.35)]"
-                        loading="lazy"
+                        width={24}
+                        height={16}
+                        className="h-4 w-6 rounded-sm border border-[rgba(155,108,255,0.35)] object-cover"
+                        fallbackClassName="rounded-sm border border-[rgba(155,108,255,0.35)] text-[10px]"
                       />
                 </span>
                   ) : (
@@ -956,12 +960,13 @@ export async function ProfileTemplate({
           </div>
 
           <div className="relative h-28 w-28 overflow-hidden rounded-3xl border border-[rgba(155,108,255,0.4)]">
-            <Image
+            <ImageWithFallback
               src={avatarUrl}
               alt="Steam avatar"
               fill
               sizes="112px"
-              className="object-cover"
+              fallbackText="PG"
+              fallbackClassName="bg-gradient-to-br from-[#7c4dff] to-[#56d1ff] text-[10px] font-bold text-white"
             />
           </div>
 
@@ -970,7 +975,7 @@ export async function ProfileTemplate({
               <>
                 <div className="group relative">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#47f59d] bg-[rgba(71,245,157,0.12)] text-[#47f59d]">
-                    ✓
+                    <BadgeCheck className="h-4 w-4" />
                   </span>
                   <div className="pointer-events-none absolute left-1/2 top-10 z-50 hidden w-56 -translate-x-1/2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.95)] px-4 py-3 text-center text-xs text-[rgba(233,228,255,0.7)] shadow-[0_0_24px_rgba(124,77,255,0.35)] group-hover:block">
                     <div className="mb-1 text-sm font-semibold text-[#9b6cff]">
@@ -981,7 +986,7 @@ export async function ProfileTemplate({
                 </div>
                 <div className="group relative">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#56d1ff] bg-[rgba(86,209,255,0.12)] text-[#56d1ff]">
-                    ★
+                    <Star className="h-4 w-4" />
                   </span>
                   <div className="pointer-events-none absolute left-1/2 top-10 z-50 hidden w-56 -translate-x-1/2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.95)] px-4 py-3 text-center text-xs text-[rgba(233,228,255,0.7)] shadow-[0_0_24px_rgba(124,77,255,0.35)] group-hover:block">
                     <div className="mb-1 text-sm font-semibold text-[#9b6cff]">
@@ -995,7 +1000,7 @@ export async function ProfileTemplate({
             {overwatchBanned ? (
               <div className="group relative">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#ff5a7a] bg-[rgba(255,90,122,0.12)] text-[#ff5a7a]">
-                  ⛔
+                  <Ban className="h-4 w-4" />
                 </span>
                 <div className="pointer-events-none absolute left-1/2 top-10 z-50 hidden w-56 -translate-x-1/2 rounded-2xl border border-[rgba(155,108,255,0.35)] bg-[rgba(12,9,26,0.95)] px-4 py-3 text-center text-xs text-[rgba(233,228,255,0.7)] shadow-[0_0_24px_rgba(124,77,255,0.35)] group-hover:block">
                   <div className="mb-1 text-sm font-semibold text-[#ff5a7a]">
@@ -1087,11 +1092,12 @@ export async function ProfileTemplate({
               <div className="flex items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.6)] px-3 py-2 text-center">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                   {faceitLevelBadge && (
-                    <Image
+                    <ImageWithFallback
                       src={faceitLevelBadge}
                       alt={`FACEIT level ${faceitLevel}`}
                       width={18}
                       height={18}
+                      fallbackClassName="h-[18px] w-[18px] rounded-full text-[8px]"
                     />
                   )}
                   {faceitElo ?? "N/A"}
@@ -1100,12 +1106,13 @@ export async function ProfileTemplate({
               <div className="flex items-center justify-center rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.6)] px-3 py-2 text-center">
                 {premierBadge ? (
                   <div className="relative">
-                    <Image
+                    <ImageWithFallback
                       src={premierBadge}
                       alt="Premier Rank"
                       width={72}
                       height={26}
                       className="h-6 w-auto object-contain"
+                      fallbackClassName="h-6 w-full rounded-xl text-[10px]"
                     />
                     <div className="absolute inset-0 flex items-center justify-center italic">
                       <span className="font-bold text-white drop-shadow-lg">

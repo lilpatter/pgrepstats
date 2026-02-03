@@ -117,7 +117,7 @@ export function SidebarClient({
               key={item.href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
+                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
               )}
             >
               <Icon className="h-4 w-4 text-[#9b6cff]" />
@@ -129,7 +129,7 @@ export function SidebarClient({
           <Link
             href="/admin"
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
+              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[rgba(233,228,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[rgba(124,77,255,0.15)] hover:text-white"
             )}
           >
             <ShieldAlert className="h-4 w-4 text-[#9b6cff]" />
