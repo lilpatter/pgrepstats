@@ -2059,110 +2059,111 @@ export async function ProfileTemplate({
                 )}
               </TabsContent>
             </Card>
+            <Card className="space-y-3">
+              <CardTitle>Recent Matches</CardTitle>
+              <CardDescription>
+                Combined Leetify matches with source indicators.
+              </CardDescription>
+              <HorizontalScroll className="flex gap-3">
+                {combinedMatches.length === 0 ? (
+                  <div className="min-w-[260px] rounded-2xl border border-[rgba(155,108,255,0.3)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
+                    No matches found yet. Play a few games and refresh to populate.
+                  </div>
+                ) : (
+                  combinedMatches.slice(0, 30).map((match) => {
+                    const dataSource = String(match.data_source ?? "unknown");
+                    const rankTypeRaw = match.rank_type ?? null;
+                    const rankType =
+                      typeof rankTypeRaw === "number"
+                        ? rankTypeRaw
+                        : Number.isNaN(Number(rankTypeRaw))
+                        ? null
+                        : Number(rankTypeRaw);
+                    const label =
+                      rankType === 11
+                        ? "Premier"
+                        : rankType === 12
+                        ? "Competitive"
+                        : rankType === 7
+                        ? "Wingman"
+                        : dataSource === "matchmaking"
+                        ? "Premier"
+                        : dataSource === "matchmaking_competitive"
+                        ? "Competitive"
+                        : dataSource === "matchmaking_wingman"
+                        ? "Wingman"
+                        : dataSource === "faceit"
+                        ? "FACEIT"
+                        : dataSource.toUpperCase();
+                    const dataSourceMatchId = String(match.data_source_match_id ?? "");
+                    const matchId = String(match.id ?? "");
+                    const matchUrl =
+                      dataSourceMatchId && dataSource !== "unknown"
+                        ? `/match/${encodeURIComponent(dataSource)}/${encodeURIComponent(
+                            dataSourceMatchId
+                          )}`
+                        : matchId
+                        ? `/match/leetify/${encodeURIComponent(matchId)}`
+                        : undefined;
+                    const rawMapName = String(match.map_name ?? "unknown").toLowerCase();
+                    const mapImage =
+                      rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
+                        ? `/map-previews/${rawMapName}.webp`
+                        : null;
+                    const finishedAt =
+                      typeof match.finished_at === "string"
+                        ? match.finished_at
+                        : undefined;
+                    return matchUrl ? (
+                      <Link
+                        key={`${match.id}-${dataSource}`}
+                        href={matchUrl}
+                        className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
+                      >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
+                        {mapImage ? (
+                          <>
+                            <MapPreviewImage src={mapImage} alt={rawMapName} />
+                            <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
+                          </>
+                        ) : null}
+                        <div className="relative">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
+                              {label}
+                            </span>
+                            <span className="text-sm font-semibold text-white">
+                              {formatMapName(String(match.map_name ?? "UNKNOWN"))}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-[rgba(233,228,255,0.5)]">
+                            {String(match.outcome ?? "").toUpperCase()}
+                          </div>
+                          <div className="mt-2 text-sm font-semibold text-white">
+                            {Array.isArray(match.score)
+                              ? `${match.score[0]}-${match.score[1]}`
+                              : "N/A"}
+                          </div>
+                          <div className="mt-1 text-[rgba(233,228,255,0.5)]">
+                            {formatRelativeMatchTime(finishedAt)}
+                          </div>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        key={`${match.id}-${dataSource}-na`}
+                        className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(15,12,30,0.4)] px-4 py-3 text-xs text-[rgba(233,228,255,0.5)]"
+                      >
+                        <div className="relative">Match details unavailable</div>
+                      </div>
+                    );
+                  })
+                )}
+              </HorizontalScroll>
+            </Card>
           </Tabs>
         </div>
       </section>
-      <Card className="space-y-3">
-        <CardTitle>Recent Matches</CardTitle>
-        <CardDescription>
-          Combined Leetify matches with source indicators.
-        </CardDescription>
-        <HorizontalScroll className="flex gap-3">
-          {combinedMatches.length === 0 ? (
-            <div className="min-w-[260px] rounded-2xl border border-[rgba(155,108,255,0.3)] p-4 text-xs text-[rgba(233,228,255,0.6)]">
-              No matches found yet. Play a few games and refresh to populate.
-            </div>
-          ) : (
-                    combinedMatches.slice(0, 30).map((match) => {
-              const dataSource = String(match.data_source ?? "unknown");
-              const rankTypeRaw = match.rank_type ?? null;
-              const rankType =
-                typeof rankTypeRaw === "number"
-                  ? rankTypeRaw
-                  : Number.isNaN(Number(rankTypeRaw))
-                  ? null
-                  : Number(rankTypeRaw);
-              const label =
-                rankType === 11
-                  ? "Premier"
-                  : rankType === 12
-                  ? "Competitive"
-                  : rankType === 7
-                  ? "Wingman"
-                  : dataSource === "matchmaking"
-                  ? "Premier"
-                  : dataSource === "matchmaking_competitive"
-                  ? "Competitive"
-                  : dataSource === "matchmaking_wingman"
-                  ? "Wingman"
-                  : dataSource === "faceit"
-                  ? "FACEIT"
-                  : dataSource.toUpperCase();
-              const dataSourceMatchId = String(match.data_source_match_id ?? "");
-                      const matchId = String(match.id ?? "");
-              const matchUrl =
-                dataSourceMatchId && dataSource !== "unknown"
-                  ? `/match/${encodeURIComponent(dataSource)}/${encodeURIComponent(
-                      dataSourceMatchId
-                    )}`
-                  : matchId
-                  ? `/match/leetify/${encodeURIComponent(matchId)}`
-                  : undefined;
-                      const rawMapName = String(match.map_name ?? "unknown").toLowerCase();
-                      const mapImage = rawMapName.startsWith("de_") || rawMapName.startsWith("cs_")
-                        ? `/map-previews/${rawMapName}.webp`
-                        : null;
-              const finishedAt =
-                typeof match.finished_at === "string" ? match.finished_at : undefined;
-              return matchUrl ? (
-                <Link
-                  key={`${match.id}-${dataSource}`}
-                  href={matchUrl}
-                          className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.3)] bg-[rgba(15,12,30,0.55)] px-4 py-3 text-xs text-[rgba(233,228,255,0.7)] transition hover:border-[#9b6cff]"
-                >
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(90,70,160,0.35),_rgba(10,8,20,0.9))]" />
-                          {mapImage ? (
-                            <>
-                              <MapPreviewImage src={mapImage} alt={rawMapName} />
-                              <div className="absolute inset-0 bg-[rgba(8,6,16,0.7)]" />
-                            </>
-                          ) : null}
-                          <div className="relative">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-[rgba(155,108,255,0.4)] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#9b6cff]">
-                      {label}
-                    </span>
-                    <span className="text-sm font-semibold text-white">
-                      {formatMapName(String(match.map_name ?? "UNKNOWN"))}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-[rgba(233,228,255,0.5)]">
-                    {String(match.outcome ?? "").toUpperCase()}
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-white">
-                    {Array.isArray(match.score)
-                      ? `${match.score[0]}-${match.score[1]}`
-                      : "N/A"}
-                  </div>
-                  <div className="mt-1 text-[rgba(233,228,255,0.5)]">
-                    {formatRelativeMatchTime(finishedAt)}
-                          </div>
-                          </div>
-                </Link>
-              ) : (
-                <div
-                  key={`${match.id}-${dataSource}-na`}
-                  className="relative min-w-[220px] overflow-hidden rounded-2xl border border-[rgba(155,108,255,0.2)] bg-[rgba(15,12,30,0.4)] px-4 py-3 text-xs text-[rgba(233,228,255,0.5)]"
-                >
-                  <div className="relative">
-                    Match details unavailable
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </HorizontalScroll>
-      </Card>
     </div>
   );
 }
